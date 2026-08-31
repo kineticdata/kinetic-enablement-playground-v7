@@ -95,12 +95,17 @@ Platform space you want the portal to connect to (e.g.
 then Vite starting up and printing that it's serving at
 `http://localhost:3000`.
 
+If port 3000 is already in use on your machine, Vite silently starts on
+`3001` (or the next free port) instead — it prints the actual URL it's
+using, so read that from the terminal rather than assuming 3000.
+
 If you need to change the space later, delete
 `portal/.env.development.local` and run `yarn start` again to be re-prompted.
 
 ### Step 4 — Log in
 
-Open `http://localhost:3000` in a browser and log in with credentials for
+Open the URL Vite printed in Step 3 (`http://localhost:3000` unless it had
+to fall back to another port) in a browser and log in with credentials for
 the space you configured in Step 3.
 
 **You should see:** the Momentum Portal home page, with your username
@@ -272,6 +277,12 @@ which looks like a login failure. If the URL is right, it's a credentials
 problem for that specific space, not a portal problem. Delete
 `portal/.env.development.local` and run `yarn start` again if you need to
 re-enter the URL.
+
+**The portal isn't at `http://localhost:3000`**
+If port 3000 was already in use on your machine, Vite falls back to 3001
+(or the next free port) without asking — it prints the URL it actually
+picked in the terminal after `yarn start`. Read that line rather than
+assuming 3000.
 
 **`claude` command not found when connecting MCP**
 That's fine — the Claude Code CLI is only needed if you use Claude Code.
