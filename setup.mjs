@@ -66,12 +66,24 @@ if (install.status !== 0) {
 ok('portal dependencies installed');
 
 // ---- Optional track: AI ---------------------------------------------------
-const rl = createInterface({ input: process.stdin, output: process.stdout });
-// On EOF (piped/closed stdin) rl.question's promise never settles on its own
-// in current Node — the interface just emits 'close'. Race the question
-// against that event so an EOF answer resolves to '' (treated as "no")
-// instead of hanging until Node's unsettled-top-level-await bailout.
-const ask = (q) => new Promise((resolve) => {
+// Two very different stdin shapes reach this script:
+//   - interactive (a real TTY): rl.question resolves per keystroke-line as
+//     usual, but on EOF (e.g. ctrl-D) its promise never settles on its own —
+//     the interface just emits 'close'. Race the question against that event
+//     so an EOF answer resolves to '' (treated as "no") instead of hanging
+//     until Node's unsettled-top-level-await bailout.
+//   - piped/redirected (CI, `printf ... | ./setup.sh`): ALL input arrives as
+//     one buffered chunk and readline emits 'close' almost immediately, long
+//     before the questions that will consume that input are even asked. The
+//     'close' race above would then answer every question after the first
+//     with '' regardless of what was piped. So for non-TTY stdin we read the
+//     whole stream up front, split it into lines, and serve answers from
+//     that array in order — falling back to '' once exhausted, which
+//     preserves the same EOF-behaves-as-no property.
+const isTTY = Boolean(process.stdin.isTTY);
+
+const rl = isTTY ? createInterface({ input: process.stdin, output: process.stdout }) : null;
+const askTTY = (q) => new Promise((resolve) => {
   let settled = false;
   const onClose = () => { if (!settled) { settled = true; resolve(''); } };
   rl.once('close', onClose);
@@ -79,6 +91,24 @@ const ask = (q) => new Promise((resolve) => {
     if (!settled) { settled = true; rl.off('close', onClose); resolve(String(a ?? '').trim()); }
   }).catch(() => { if (!settled) { settled = true; resolve(''); } });
 });
+
+let piped = null;
+let pipedIndex = 0;
+if (!isTTY) {
+  const chunks = [];
+  for await (const c of process.stdin) chunks.push(c);
+  piped = Buffer.concat(chunks.map((c) => (Buffer.isBuffer(c) ? c : Buffer.from(c))))
+    .toString('utf8')
+    .split(/\r?\n/);
+}
+
+const ask = async (q) => {
+  if (piped) {
+    say(q);
+    return (piped[pipedIndex++] ?? '').trim();
+  }
+  return askTTY(q);
+};
 
 say('\nOptional: AI assistance');
 say('  The skills library and MCP server are entirely optional.');
@@ -140,7 +170,7 @@ if (wantMcp) {
   }
 }
 
-await rl.close();
+if (rl) await rl.close();
 
 // ---- Cross-config consistency (does not take ownership) ------------------
 const envFile = join(ROOT, 'portal', '.env.development.local');

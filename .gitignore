@@ -39,3 +39,8 @@ dist-ssr
 .env.test.local
 .env.production.local
 frontend-testing/.env
+
+# setup.mjs-generated MCP client config (per-partner artifact; .vscode/mcp.json
+# is already covered by the .vscode/* rule above, but .cursor only ignores
+# mcp.json — .cursor/rules/ stays tracked).
+.cursor/mcp.json
