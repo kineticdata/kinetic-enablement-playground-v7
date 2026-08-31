@@ -17,7 +17,7 @@ The Momentum Portal is a fully-functional demo that brings the capabilities of t
 ### Clone the Repository
 
 ```
-git clone https://github.com/kineticdata/momentum-portal
+git clone https://github.com/kineticdata/kinetic-enablement-playground
 ```
 
 The front end code can be found in the `portal` directory of the repo.
@@ -29,7 +29,7 @@ The front end code can be found in the `portal` directory of the repo.
 $ yarn install
 ```
 
-Requires `node` `v18` or later, and `yarn` `v1`.
+Requires `node` `v20` or later, and `yarn` `v1`.
 
 ### Start Local Dev Server
 
@@ -70,7 +70,7 @@ The following list summarizes the different libraries that have been used to cre
 ## Project Structure
 
 ```
-momentum-portal/portal
+kinetic-enablement-playground/portal
 ├── src/                    # project source code
 │   ├── assets/             # static assets (e.g. styles, fonts)
 │   ├── atoms/              # design system components
@@ -78,8 +78,8 @@ momentum-portal/portal
 │   ├── helpers/            # helper functions
 │   ├── pages/              # pages within the app
 │   │
-│   ├── App.js              # app renderer
-│   ├── index.js            # javascript root
+│   ├── App.jsx             # app renderer
+│   ├── index.jsx           # javascript root
 │   ├── redux.js            # redux toolkit setup
 │   └── setupEnv.cjs        # prestart script to set up local env file
 │
@@ -88,9 +88,8 @@ momentum-portal/portal
 ├── .env.production         # prod environment variables
 ├── index.html              # html root
 ├── package.json
-├── postcss.config.js       # postcss config used by tailwind
-├── tailwind.config.js      # tailwind config
-├── vite.config.mjs         # vite config
+├── vite.config.js          # vite config (Tailwind 4 is wired in here via
+│                           #   @tailwindcss/vite — no postcss/tailwind config)
 └── yarn.lock               # dependency lock file - DO NOT EDIT OR DELETE
 ```
 
@@ -99,32 +98,6 @@ momentum-portal/portal
 [Kinetic Widgets Documentation &#x2B9E;](src/components/kinetic-form/widgets/README.md)
 
 See the [Kinetic Data Documentation Library](https://docs.kineticdata.com/) for more information.
-
-## Portal S3 Deployment
-
-The Momentum Portal code is published to an S3 bucket. The base URL is: `https://s3.amazonaws.com/kinetic-portals/portals/momentum-portal/`
-
-Publishes are split into two channels so consumers can choose how aggressively they pick up changes:
-
-- **`versions/`** — produced by tag pushes. A real release tag (e.g. `v6.1.8`) fans out to three destinations so a space can pin to whichever granularity it wants: the exact version, the minor line, or the major line. Pre-release tags (e.g. `v6.1.8-rc2`) publish **only** to their exact-version destination so they cannot bump a major or minor line that production spaces follow.
-- **`branches/`** — produced by commits to protected branches (`main` and any `epic/**` branch). A branch tip is meant for development/QA spaces, not production.
-
-| Github Event                | Destination Directory                                                                   | Github Action Workflow File   | Example Usage                                  |
-| --------------------------- | --------------------------------------------------------------------------------------- | ----------------------------- | ---------------------------------------------- |
-| Tag Push (release)          | `versions/XX.YY.ZZ/` **and** `versions/XX.YY.x/` **and** `versions/XX.x.x/`             | portal-tag-push.yaml          | Releasing a tagged version.                    |
-| Tag Push (pre-release)      | `versions/XX.YY.ZZ-suffix/` (exact only — does not bump the minor or major lines)       | portal-tag-push.yaml          | Publishing a release candidate or build tag.   |
-| Commit to Protected Branch  | `branches/<branch-name>/` (e.g. `branches/main/`, `branches/epic/spring-boot/`)         | portal-branch-push.yaml       | Testing the tip of `main` or an epic branch.   |
-| Run Dispatch Workflow       | `versions/YYYYMMDD-abcd1234/`                                                           | portal-build-dispatch.yaml    | Testing code on a particular branch or commit. |
-
-Example URLs for the different channels:
-
-- Branch tip (bleeding edge): `https://s3.amazonaws.com/kinetic-portals/portals/momentum-portal/branches/main/`
-- Major line (stable, recommended for production): `https://s3.amazonaws.com/kinetic-portals/portals/momentum-portal/versions/6.x.x/`
-- Pinned release: `https://s3.amazonaws.com/kinetic-portals/portals/momentum-portal/versions/6.1.8/`
-
-You can also view the output to determine the S3 bucket by viewing the Github Action workflow run.
-
-[github_actions_directory](../.github/workflows/)
 
 ### License
 

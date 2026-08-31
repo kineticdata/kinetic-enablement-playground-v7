@@ -54,11 +54,15 @@ macOS / Linux:
 ./setup.sh
 ```
 
-Windows:
+Windows (PowerShell or `cmd.exe`):
 
-```cmd
-setup.cmd
+```powershell
+.\setup.cmd
 ```
+
+The leading `.\` matters: PowerShell — the default shell in Windows Terminal —
+will not run a script from the current directory without it. It is harmless in
+`cmd.exe`, so the same command works in either shell.
 
 Both scripts do the same thing: they check that `git`, `node`, and `yarn`
 are present and that Node meets the version 20 floor, then install the
@@ -74,10 +78,11 @@ features (installing the skills library, connecting the MCP server). For
 the Core track, answer **N** (or just press Enter) to both — the portal
 does not need either. The Optional AI track below covers what those
 questions do if you want to come back and say yes later; you can also just
-re-run `./setup.sh` / `setup.cmd` at any time, since it's idempotent.
+re-run `./setup.sh` / `.\setup.cmd` at any time, since it's idempotent.
 
 **You should see:** the script finish with `Setup complete.` and a `Next:`
-section telling you to run `cd portal && yarn start`.
+section listing `cd portal` and `yarn start` as two separate commands — run
+them one after the other (see Step 3).
 
 ### Step 3 — Start the portal
 
@@ -113,6 +118,11 @@ visible in the header.
 
 That's the Core track. The portal is now running against your space and
 you can start editing code in `portal/src`.
+
+**Next: [`docs/FIRST-BUILD.md`](docs/FIRST-BUILD.md)** walks the three-step arc
+this playground is built around — run it, change it by hand, then build on it
+with an AI assistant. Steps 1 and 2 need no AI tooling at all; only Step 3 uses
+the Optional AI track below.
 
 ---
 
@@ -154,7 +164,7 @@ but starts uninitialized — clone doesn't pull it in.
 git submodule update --init ai-skills
 ```
 
-This is what `./setup.sh` / `setup.cmd` does for you if you answer "y" to
+This is what `./setup.sh` / `.\setup.cmd` does for you if you answer "y" to
 the skills-library question in Step 2. This route works for any tool that
 reads files from the filesystem (Cursor, Copilot, plain file search), and
 it's what the root pointer files below (`CLAUDE.md`, `AGENTS.md`,
@@ -191,14 +201,17 @@ client opens a browser for you to sign in; there's no API key or secret to
 copy anywhere.
 
 If you answered "y" to the MCP question in Step 2, `./setup.sh` /
-`setup.cmd` already registered it for you:
+`.\setup.cmd` already registered it for you:
 
 - **Claude Code:** ran `claude mcp add --transport http kinetic-<your-space-slug> <endpoint>` directly.
 - **Cursor:** wrote `.cursor/mcp.json`.
 - **VS Code / Copilot:** wrote `.vscode/mcp.json`.
 
 (It never overwrites an existing config for these files — if one was
-already there, you'll see a `WARN` telling you to wire it up by hand.)
+already there, you'll see a `WARN` naming the file it left alone, followed by
+the server name and endpoint to add there yourself. Re-running setup is safe
+either way: a Claude Code server that is already registered is reported as
+such and left untouched.)
 
 The server is registered under the name **`kinetic-<space-slug>`** — e.g.
 `kinetic-acme-dev` for `https://acme-dev.kinopsdev.io` — never a generic
@@ -224,8 +237,9 @@ get_context, get_api_spec, execute_api, list_kapps, list_forms, get_form,
 search_submissions, get_submission, list_trees, get_tree, list_errors
 ```
 
-and disable the other 68 in your client's MCP tool settings. You lose
-nothing by doing this: `execute_api` combined with `get_api_spec` can reach
+and, **in Cursor and Copilot**, disable the other 68 in your client's MCP tool
+settings. Claude Code loads MCP tools on demand and has no such limit, so no
+action is needed there. You lose nothing by trimming the list: `execute_api` combined with `get_api_spec` can reach
 every endpoint the platform exposes, so the remaining 68 tools are
 convenience wrappers around calls those two can already make.
 
@@ -259,16 +273,19 @@ current platform versions.
 **"Node.js is required but was not found" / setup fails on the Node check**
 You need Node 20 or newer. Check with `node --version`. If it's below 20,
 install a newer version from https://nodejs.org/ (or via a version manager
-like `nvm`/`fnm`) and re-run `./setup.sh` or `setup.cmd`.
+like `nvm`/`fnm`) and re-run `./setup.sh` or `.\setup.cmd`.
 
 **`yarn: command not found`**
 Run `corepack enable` (bundled with Node 20+) or `npm install -g yarn`,
 then re-run the setup script.
 
 **I'm on Windows and `./setup.sh` doesn't work**
-That's expected — `./setup.sh` is the macOS/Linux entry point. On Windows,
-run `setup.cmd` instead (double-click it in Explorer, or run it from
-`cmd.exe` or PowerShell).
+That's expected — `./setup.sh` is the macOS/Linux entry point. On Windows, run
+`.\setup.cmd` instead, from either PowerShell or `cmd.exe`. The leading `.\` is
+required in PowerShell, which does not run scripts from the current directory
+without it; if you type bare `setup.cmd` there you'll get "the term 'setup.cmd'
+is not recognized". You can also double-click `setup.cmd` in Explorer — the
+window stays open at the end so you can read the output.
 
 **Login fails after `yarn start`**
 First check the space URL you entered — a typo there (wrong slug, wrong
@@ -286,6 +303,6 @@ assuming 3000.
 
 **`claude` command not found when connecting MCP**
 That's fine — the Claude Code CLI is only needed if you use Claude Code.
-`./setup.sh` / `setup.cmd` will detect it's missing and print the
+`./setup.sh` / `.\setup.cmd` will detect it's missing and print the
 `claude mcp add …` command for you to run later if you install it; Cursor
 and VS Code/Copilot configs are written either way.

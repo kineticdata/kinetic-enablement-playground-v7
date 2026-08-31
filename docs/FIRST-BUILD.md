@@ -88,12 +88,14 @@ Open a chat with your assistant in this repo and paste:
 > until the manager approves it.
 
 Your assistant will use the Kinetic MCP server's tools to build the form
-and its approval workflow directly on your space (in Claude Code, likely
-tools like `create_form` and `create_form_workflow` directly; in Cursor,
-where only 11 tools are enabled, the same result via `execute_api` against
-the platform's REST API) — this isn't a mockup or a code sample, it is
-**incremental seeding**: real platform artifacts (a form, a workflow)
-created from a plain-English description. Expect it to ask clarifying
+and its approval workflow directly on your space. With the 11-tool allowlist
+from `ONBOARDING.md` enabled, that route is `get_api_spec` to look up the
+relevant endpoints and `execute_api` to call them — those two together reach
+every endpoint the platform exposes, so no extra tools are needed.
+
+This isn't a mockup or a code sample, it is **incremental seeding**: real
+platform artifacts (a form, a workflow) created from a plain-English
+description. Expect it to ask clarifying
 questions along the way (who approves, what happens on denial) — answer
 those the same way you'd brief a teammate.
 
