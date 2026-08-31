@@ -23,6 +23,11 @@ const warn = (m) => say(`  WARN  ${m}`);
 const bad = (m, fix) => { say(`  FAIL  ${m}`); remedies.push(fix); };
 
 // `yarn` and `claude` are .cmd shims on Windows; spawning them without a shell fails.
+// NOTE: with `shell: true` Node does not quote args — it concatenates them into one
+// `cmd.exe /d /s /c` string. Every arg passed here is metacharacter-free by
+// construction (literals, or hostname-legal text from `new URL()`), and `cwd` is
+// passed as an option rather than inlined. Keep it that way: adding a *path*
+// argument here would break on any Windows clone path containing a space.
 function run(cmd, args, opts = {}) {
   return spawnSync(cmd, args, { encoding: 'utf8', shell: WIN, ...opts });
 }
@@ -48,7 +53,8 @@ meetsFloor(nodeV, NODE_FLOOR)
 
 const yarnV = have('yarn');
 yarnV ? ok(`yarn ${yarnV}`)
-      : bad('yarn not found', 'Install yarn: npm install -g yarn');
+      : bad('yarn not found',
+            "Install yarn: 'corepack enable' (Node 20+) or 'npm install -g yarn'");
 
 if (remedies.length) {
   say('\nCannot continue until these are resolved:\n');
@@ -142,11 +148,24 @@ if (wantMcp) {
   const name = mcpServerName(parsed.slug);
 
   // Claude Code: run the real command rather than printing it.
+  // `claude mcp add` exits 1 with "already exists" on a second run, so probe
+  // first and treat an existing registration as success — re-running setup
+  // must leave a working config untouched, not print a false WARN plus a
+  // manual remedy that fails the same way.
   if (have('claude')) {
-    const r = run('claude', ['mcp', 'add', '--transport', 'http', name, endpoint], { cwd: ROOT, stdio: 'inherit' });
-    r.status === 0
-      ? ok(`Claude Code server "${name}" added — run /mcp inside Claude Code to sign in`)
-      : warn(`claude mcp add failed. Run manually:\n          claude mcp add --transport http ${name} ${endpoint}`);
+    const registered = () => run('claude', ['mcp', 'get', name], { cwd: ROOT }).status === 0;
+    if (registered()) {
+      ok(`Claude Code server "${name}" already configured — left untouched`);
+    } else {
+      const r = run('claude', ['mcp', 'add', '--transport', 'http', name, endpoint], { cwd: ROOT, stdio: 'inherit' });
+      if (r.status === 0) {
+        ok(`Claude Code server "${name}" added — run /mcp inside Claude Code to sign in`);
+      } else if (registered()) {
+        ok(`Claude Code server "${name}" already configured — left untouched`);
+      } else {
+        warn(`claude mcp add failed. Run manually:\n          claude mcp add --transport http ${name} ${endpoint}`);
+      }
+    }
   } else {
     say(`  Claude Code CLI not found. If you use it later, run:\n          claude mcp add --transport http ${name} ${endpoint}`);
   }
@@ -157,7 +176,11 @@ if (wantMcp) {
     { file: join(ROOT, '.vscode', 'mcp.json'), body: vscodeMcpConfig(name, endpoint), label: 'Copilot / VS Code' },
   ];
   for (const t of targets) {
-    if (existsSync(t.file)) { warn(`${t.label} config already exists — left untouched (${t.file})`); continue; }
+    if (existsSync(t.file)) {
+      warn(`${t.label} config already exists — left untouched (${t.file})`);
+      say(`        Add the server by hand if it is missing there: ${name} -> ${endpoint}`);
+      continue;
+    }
     mkdirSync(dirname(t.file), { recursive: true });
     writeFileSync(t.file, JSON.stringify(t.body, null, 2) + '\n');
     ok(`${t.label} config written`);
@@ -176,7 +199,7 @@ if (rl) await rl.close();
 const envFile = join(ROOT, 'portal', '.env.development.local');
 const portalHost = existsSync(envFile) ? proxyHostFromEnv(readFileSync(envFile, 'utf8')) : null;
 if (spaceOrigin && !environmentsMatch(portalHost, spaceOrigin)) {
-  warn(`the portal targets ${portalHost} but MCP targets ${spaceOrigin}.`);
+  warn(`The portal targets ${portalHost} but MCP targets ${spaceOrigin}.`);
   say('        That mismatch is usually a mistake. Fix portal/.env.development.local if unintended.');
 }
 
@@ -184,6 +207,7 @@ if (spaceOrigin && !environmentsMatch(portalHost, spaceOrigin)) {
 say('\nSetup complete.\n');
 if (spaceOrigin) say(`  MCP environment: ${spaceOrigin}`);
 say('  Next:');
-say('    cd portal && yarn start');
+say('    cd portal');
+say('    yarn start');
 say('  You will be prompted for your Kinetic space URL on first start,');
 say('  then the portal opens at http://localhost:3000\n');
