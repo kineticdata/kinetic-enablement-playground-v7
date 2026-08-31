@@ -1,0 +1,19 @@
+---
+description: Read when working on the Kinetic Platform (forms, workflows, the REST API, or the portal's Kinetic integrations)
+globs:
+alwaysApply: false
+---
+
+# Kinetic Platform skills
+
+This is an optional, additive pointer — the portal in `portal/` runs fine
+without it. If `ai-skills/skills/` exists in this repo (it's an optional
+git submodule; see [ONBOARDING.md](../../ONBOARDING.md)), read the
+relevant skill file(s) there before writing code that touches the Kinetic
+Platform: forms, workflows, connections/operations, security policies, or
+the platform REST API.
+
+If `ai-skills/skills/` is empty or missing, the submodule hasn't been
+initialized — that's a normal, supported state, not an error. Either
+initialize it with `git submodule update --init ai-skills`, or proceed
+without it.

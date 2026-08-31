@@ -1,25 +1,16 @@
-# Momentum Portal
+# Kinetic Enablement Playground
 
-## Portal Directory
+A working Kinetic Platform portal for partners to clone, run against their
+own space, and learn from — with an optional AI layer (a skills library and
+an MCP server) on top of it.
 
-This directory contains the front end code for the portal.
+Start here: **[ONBOARDING.md](ONBOARDING.md)**.
 
-### Documentation
+## Provenance
 
-- [Getting Started](portal/README.md)
-- [Form Widgets](portal/src/components/kinetic-form/widgets/README.md)
+Seeded from [`kineticdata/momentum-portal`](https://github.com/kineticdata/momentum-portal)
+at commit `08a26ca`.
 
-
-## Template Directory
-
-This directory contains the template data for an installation of the portal.
-
-### Export
-
-See the [Export Guide](template/tooling/README.md).
-
-### Install
-
-Installation of the Momentum portal is done by running the `install.rb` script. However, this script should not be run manually as it requires many configuration properties provided as a JSON formatted string. It is recommended to install the Momentum portal using a workflow process that provides the configuration data to system coordinator when creating a new space.
-
-See the [Momentum Portal Tooling](https://kineticdata.atlassian.net/wiki/spaces/KD/pages/1167360002/Momentum+Portal+Tooling) page for detailed information about installing the Momemtum Portal.
+This is a teaching sandbox, not a fork we intend to keep in sync with
+momentum-portal. Expect it to diverge over time as it's shaped around
+onboarding rather than production use.
