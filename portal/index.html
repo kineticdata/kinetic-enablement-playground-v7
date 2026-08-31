@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta name="charset" content="UTF-8" charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="This website is a foundation front end interface to be used with the Kinetic Platform."
+    />
+    <script>
+      window.global ||= window;
+    </script>
+
+    <!-- Styles for CoreForm component date picker -->
+    <link rel="stylesheet" href="/app/head.css" type="text/css" media="all" />
+
+    <!-- It needs to fetch these three so it has the K runtime object from Core -->
+    <script src="/app/head.js"></script>
+    <script src="/app/bundle.js"></script>
+
+    <title>Momentum Portal</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/index.jsx"></script>
+  </body>
+</html>

@@ -1,0 +1,193 @@
+/******************************************************************************
+ * PANELS
+ *
+ * Styling for panels, which are rendered using portals in a DOM element that
+ * allows them to slide in on top of other content. These styles handle the
+ * styling of the panels container, and their backdrop and positioner elements.
+ * These styles also handle the animation of the panels and backdrops.
+ ******************************************************************************/
+
+@layer base {
+  #app-panels {
+    /* Variables for animation */
+    --anim-duration: 0.3s;
+    --anim-timing: cubic-bezier(0.4, 0, 0.6, 1);
+
+    /* Variables used for sizing the panels, which are changed when stacking. */
+    --panel-height: calc(100vh - 4rem);
+    --panel-width: calc(100vh - 4rem);
+    --panel-max-width: 44rem;
+
+    /*
+     * Position and size the panels container either on the bottom of the screen
+     * for mobile, or on the right of the screen for larger sizes.
+     */
+    @apply relative overflow-visible max-md:w-full max-md:h-0 md:w-0 md:h-full z-20;
+
+    /* Style each panel positioner element. */
+    [data-scope='dialog'][data-part='positioner'] {
+      /* Apply styles to position panels in the bottom right corner. */
+      @apply fixed inset-0 flex justify-end items-end;
+
+      /*
+       * If the panel is open and has a sibling panel after it that's also open,
+       * resize this panel a little so it sticks out behind the top one.
+       */
+      &:has([data-part='content'][data-state='open']):has(
+          ~ [data-scope='dialog'][data-part='positioner']
+            [data-part='content'][data-state='open']
+        ) {
+        --panel-height: calc(100vh - 2.5rem);
+        --panel-width: calc(100vh - 2.5rem);
+        --panel-max-width: 45.5rem;
+      }
+    }
+
+    /* Style each panel content element. */
+    [data-scope='dialog'][data-part='content'] {
+      @apply max-md:w-full max-md:h-(--panel-height) max-md:rounded-t-[2.5rem];
+      @apply md:h-full md:w-(--panel-width) md:max-w-(--panel-max-width);
+      box-shadow: 0 0 16px 0 rgba(0, 0, 0, 0.16);
+
+      /* Add slide in and out animations to the dialog component of the panel. */
+      &[data-state='open'] {
+        @apply panelSlideIn;
+      }
+      &[data-state='closed'] {
+        @apply panelSlideOut;
+      }
+
+      /*
+       * Add a transition property on the size, which will be used when there
+       * are multiple panels opened to stack them slightly.
+       */
+      transition-property: height, width, max-width;
+      transition-duration: var(--anim-duration);
+      transition-timing-function: var(--anim-timing);
+    }
+
+    /* Style the backdrop panel element. */
+    [data-scope='dialog'][data-part='backdrop'] {
+      @apply fixed inset-0 bg-black/50;
+
+      /* Add fade in and out animations to the backdrop of the panel. */
+      &[data-state='open'] {
+        @apply panelBackdropFadeIn;
+
+        /*
+         * Style the panel backdrop to make any rear backdrops transparent when
+         * there is more than one panel open.
+         */
+        &:has(
+            ~ [data-scope='dialog'][data-part='backdrop'][data-state='open']
+          ) {
+          @apply bg-black/10;
+        }
+      }
+      &[data-state='closed'] {
+        @apply panelBackdropFadeOut;
+      }
+
+      /*
+       * Add a transition property on the background color, which will be used
+       * when there are multiple panels opened to only show one backdrop.
+       */
+      transition-property: background-color;
+      transition-duration: var(--anim-duration);
+      transition-timing-function: var(--anim-timing);
+    }
+  }
+}
+
+@utility panelSlideIn {
+  @media (max-width: 767px) {
+    animation: panelSlideInBottom var(--anim-duration) var(--anim-timing) 1
+      forwards;
+  }
+}
+@utility panelSlideOut {
+  @media (max-width: 767px) {
+    animation: panelSlideOutBottom var(--anim-duration) var(--anim-timing) 1
+      forwards;
+  }
+}
+@utility panelSlideIn {
+  @media (min-width: 768px) {
+    animation: panelSlideInRight var(--anim-duration) var(--anim-timing) 1
+      forwards;
+  }
+}
+@utility panelSlideOut {
+  @media (min-width: 768px) {
+    animation: panelSlideOutRight var(--anim-duration) var(--anim-timing) 1
+      forwards;
+  }
+}
+
+@utility panelBackdropFadeIn {
+  animation: panelBackdropFadeIn var(--anim-duration) var(--anim-timing) 1
+    forwards;
+}
+@utility panelBackdropFadeOut {
+  animation: panelBackdropFadeOut var(--anim-duration) var(--anim-timing) 1
+    forwards;
+}
+
+@keyframes panelSlideInBottom {
+  0% {
+    opacity: 0;
+    margin-bottom: -5rem;
+  }
+  100% {
+    opacity: 1;
+    margin-bottom: 0;
+  }
+}
+@keyframes panelSlideOutBottom {
+  0% {
+    opacity: 1;
+    margin-bottom: 0;
+  }
+  100% {
+    opacity: 0;
+    margin-bottom: -5rem;
+  }
+}
+
+@keyframes panelSlideInRight {
+  0% {
+    opacity: 0;
+    margin-right: -5rem;
+  }
+  100% {
+    opacity: 1;
+    margin-right: 0;
+  }
+}
+@keyframes panelSlideOutRight {
+  0% {
+    opacity: 1;
+    margin-right: 0;
+  }
+  100% {
+    opacity: 0;
+    margin-right: -5rem;
+  }
+}
+
+@keyframes panelBackdropFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes panelBackdropFadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

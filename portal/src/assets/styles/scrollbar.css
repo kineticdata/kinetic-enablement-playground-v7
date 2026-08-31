@@ -1,0 +1,8 @@
+@utility scrollbar {
+  scrollbar-width: thin;
+  /*scrollbar-color: hsl(var(--color-base-300)) hsl(var(--color-base-300));*/
+}
+@utility scrollbar-white {
+  scrollbar-width: thin;
+  /*scrollbar-color: hsl(var(--color-base-300)) transparent;*/
+}

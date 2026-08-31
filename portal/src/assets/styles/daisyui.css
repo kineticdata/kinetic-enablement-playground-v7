@@ -1,0 +1,51 @@
+@plugin "daisyui" {
+  prefix: 'k';
+}
+
+:root,
+[data-theme],
+[data-theme-editor] {
+  --color-base-100: #fefefe;
+  --color-base-200: #f0f2f3;
+  --color-base-300: #d0d4db;
+  --color-base-content: #101828;
+  --color-primary: #ffce74;
+  --color-primary-content: #272117;
+  --color-secondary: #1f3d5a;
+  --color-secondary-content: #d4dfeb;
+  --color-accent: #8bc2ff;
+  --color-accent-content: #162455;
+  --color-neutral: #1f3d5a;
+  --color-neutral-content: #d4dfeb;
+  --color-info: #c7dfff;
+  --color-info-content: #1d2229;
+  --color-success: #d3edd3;
+  --color-success-content: #383f38;
+  --color-warning: #e1ac56;
+  --color-warning-content: #584220;
+  --color-error: #fec8c8;
+  --color-error-content: #801518;
+  --radius-box: 1rem;
+  --radius-field: 0.75rem;
+  --radius-selector: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@utility kmodal {
+  &:has(> [data-state='open']) {
+    @apply pointer-events-auto visible opacity-100;
+    .kmodal-box {
+      translate: 0 0;
+      scale: 1;
+      opacity: 1;
+    }
+  }
+}
+
+@utility kmodal-box {
+  @apply flex-c-st gap-6 p-8 max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)];
+}

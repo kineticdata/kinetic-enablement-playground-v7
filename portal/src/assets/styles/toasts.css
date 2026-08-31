@@ -1,0 +1,41 @@
+/******************************************************************************
+ * TOASTS
+ *
+ * Styling for toasts to handle animations based on the data states and
+ * variables provided by Ark UI.
+ ******************************************************************************/
+
+@layer base {
+  :root {
+    --toaster-offset: 1rem;
+    --toaster-top-offset: var(--toaster-offset);
+    --toaster-bottom-offset: var(--toaster-offset);
+    @media (min-width: 768px) {
+      --toaster-top-offset: 5rem;
+    }
+  }
+
+  [data-scope='toast'][data-part='group'] {
+    /* Variables for animation */
+    --anim-duration: 0.3s;
+    --anim-timing: cubic-bezier(0.4, 0, 0.6, 1);
+
+    > [data-part='root'] {
+      transition-property: translate, scale, height, opacity;
+      transition-duration: var(--anim-duration);
+      transition-timing-function: var(--anim-timing);
+
+      /* The variables for the following styles are set by Ark UI */
+      translate: var(--x) var(--y);
+      scale: var(--scale);
+      z-index: var(--z-index);
+      height: var(--height);
+      opacity: var(--opacity);
+    }
+    > [data-part='root'][data-state='closed'] {
+      transition-property: translate, scale, height, opacity;
+      transition-duration: var(--anim-duration);
+      transition-timing-function: var(--anim-timing);
+    }
+  }
+}

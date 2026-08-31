@@ -1,0 +1,106 @@
+@font-face {
+  font-family: 'Onest';
+  font-style: normal;
+  font-weight: 100;
+  font-display: swap;
+  src: url(../fonts/Onest-Thin.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Onest';
+  font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+  src: url(../fonts/Onest-ExtraLight.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Onest';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url(../fonts/Onest-Light.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Onest';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(../fonts/Onest-Regular.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Onest';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(../fonts/Onest-Medium.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Onest';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(../fonts/Onest-SemiBold.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Onest';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(../fonts/Onest-Bold.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Onest';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(../fonts/Onest-ExtraBold.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Onest';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url(../fonts/Onest-Black.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'Comforter Brush';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(../fonts/ComforterBrush-Regular.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Condiment';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(../fonts/Condiment-Regular.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Grechen Fuemen';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(../fonts/GrechenFuemen-Regular.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Mynerve';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(../fonts/Mynerve-Regular.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Nothing You Could Do';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(../fonts/NothingYouCouldDo-Regular.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Waiting for the Sunrise';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(../fonts/WaitingfortheSunrise-Regular.ttf) format('truetype');
+}

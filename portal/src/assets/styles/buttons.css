@@ -1,0 +1,33 @@
+/******************************************************************************
+ * Buttons
+ *
+ * Styling for button elements and the Kinetic form.
+ ******************************************************************************/
+
+@utility kbtn {
+  @apply font-medium md:text-base;
+}
+@utility kbtn-lg {
+  @apply max-md:text-base;
+}
+@utility kbtn-xl {
+  @apply text-lg max-md:text-base;
+}
+@utility kbtn-outline {
+  &.kbtn-base {
+    @apply border-base-300 bg-base-100 hover:bg-base-300;
+  }
+}
+
+@layer base {
+  .embedded-core-form form {
+    [data-element-type='button'] {
+      &[data-button-type='submit-page'] {
+        @apply kbtn kbtn-primary kbtn-lg;
+      }
+      &:not([data-button-type='submit-page']) {
+        @apply kbtn kbtn-outline kbtn-lg;
+      }
+    }
+  }
+}

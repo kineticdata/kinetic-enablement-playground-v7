@@ -1,0 +1,71 @@
+/******************************************************************************
+ * Avatars
+ *
+ * Styling for avatars.
+ ******************************************************************************/
+
+@utility kavatar {
+  @apply rounded-field;
+  --kavatar-bg: var(--color-base-300);
+  --kavatar-fg: var(--color-base-content);
+  > div {
+    @apply w-10;
+    background-color: var(--kavatar-bg);
+    color: var(--kavatar-fg);
+  }
+}
+
+@utility kavatar-placeholder {
+  > div {
+    @apply rounded-field uppercase font-semibold;
+  }
+}
+
+@utility kavatar-primary {
+  --kavatar-bg: var(--color-primary);
+  --kavatar-fg: var(--color-primary-content);
+}
+
+@utility kavatar-neutral {
+  --kavatar-bg: var(--color-neutral);
+  --kavatar-fg: var(--color-neutral-content);
+}
+
+@utility kavatar-actionable {
+  &:focus-visible {
+    @apply outline-2;
+  }
+  &:is(:hover, :active):not(:disabled) > div {
+    background-color: color-mix(in oklab, var(--kavatar-bg), #000 7%);
+  }
+}
+
+@utility kavatar-xs {
+  > div {
+    @apply w-6 text-xs;
+  }
+}
+
+@utility kavatar-sm {
+  > div {
+    @apply w-8 text-sm;
+  }
+}
+
+@utility kavatar-lg {
+  > div {
+    @apply w-12 text-lg;
+  }
+}
+
+@utility kavatar-xl {
+  > div {
+    @apply w-14 text-xl;
+  }
+}
+
+@utility kavatar-2xl {
+  > div {
+    @apply w-20 text-4xl;
+  }
+}

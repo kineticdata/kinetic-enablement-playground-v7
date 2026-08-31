@@ -1,0 +1,169 @@
+/******************************************************************************
+ * LAYOUT
+ *
+ * Styling for the general layout of the application. Includes styling for the
+ * root elements and wrapper elements.
+ ******************************************************************************/
+
+@layer base {
+  html {
+    font-size: 16px !important;
+  }
+  body,
+  html {
+    @apply h-screen overflow-hidden;
+  }
+
+  #root {
+    @apply flex h-full bg-base-100 text-base-content overflow-hidden;
+    /*
+     * For mobile screens, set the flex direction to column so that panels
+     * render at the bottom instead of on the right.
+     */
+    @media (max-width: 767px) {
+      @apply flex-col;
+    }
+  }
+
+  /* Style the main wrapper elements. */
+  #app-header,
+  #app-main,
+  #app-footer {
+  }
+
+  hr {
+    @apply border-base-300;
+  }
+}
+
+/* Gutter utilities */
+
+@utility gutter-sm {
+  @apply px-5;
+}
+@utility gutter-md {
+  @apply px-12;
+}
+@utility gutter-lg {
+  @apply px-24;
+}
+@utility gutter-xl {
+  @apply px-42;
+}
+@utility gutter {
+  @apply gutter-sm md:gutter-md xl:gutter-lg 2xl:gutter-xl;
+}
+
+/* Additional flex utility */
+
+@utility flex-full {
+  flex: 1 0 auto;
+}
+
+/* Flex utilities for row layouts */
+
+@utility flex-ss {
+  @apply flex flex-row justify-start items-start;
+}
+@utility flex-sc {
+  @apply flex flex-row justify-start items-center;
+}
+@utility flex-se {
+  @apply flex flex-row justify-start items-end;
+}
+@utility flex-st {
+  @apply flex flex-row justify-start items-stretch;
+}
+
+@utility flex-cs {
+  @apply flex flex-row justify-center items-start;
+}
+@utility flex-cc {
+  @apply flex flex-row justify-center items-center;
+}
+@utility flex-ce {
+  @apply flex flex-row justify-center items-end;
+}
+@utility flex-ct {
+  @apply flex flex-row justify-center items-stretch;
+}
+
+@utility flex-es {
+  @apply flex flex-row justify-end items-start;
+}
+@utility flex-ec {
+  @apply flex flex-row justify-end items-center;
+}
+@utility flex-ee {
+  @apply flex flex-row justify-end items-end;
+}
+@utility flex-et {
+  @apply flex flex-row justify-end items-stretch;
+}
+
+@utility flex-bs {
+  @apply flex flex-row justify-between items-start;
+}
+@utility flex-bc {
+  @apply flex flex-row justify-between items-center;
+}
+@utility flex-be {
+  @apply flex flex-row justify-between items-end;
+}
+@utility flex-bt {
+  @apply flex flex-row justify-between items-stretch;
+}
+
+/* Flex utilities for column layouts */
+
+@utility flex-c-ss {
+  @apply flex flex-col justify-start items-start;
+}
+@utility flex-c-sc {
+  @apply flex flex-col justify-start items-center;
+}
+@utility flex-c-se {
+  @apply flex flex-col justify-start items-end;
+}
+@utility flex-c-st {
+  @apply flex flex-col justify-start items-stretch;
+}
+
+@utility flex-c-cs {
+  @apply flex flex-col justify-center items-start;
+}
+@utility flex-c-cc {
+  @apply flex flex-col justify-center items-center;
+}
+@utility flex-c-ce {
+  @apply flex flex-col justify-center items-end;
+}
+@utility flex-c-ct {
+  @apply flex flex-col justify-center items-stretch;
+}
+
+@utility flex-c-es {
+  @apply flex flex-col justify-end items-start;
+}
+@utility flex-c-ec {
+  @apply flex flex-col justify-end items-center;
+}
+@utility flex-c-ee {
+  @apply flex flex-col justify-end items-end;
+}
+@utility flex-c-et {
+  @apply flex flex-col justify-end items-stretch;
+}
+
+@utility flex-c-bs {
+  @apply flex flex-col justify-between items-start;
+}
+@utility flex-c-bc {
+  @apply flex flex-col justify-between items-center;
+}
+@utility flex-c-be {
+  @apply flex flex-col justify-between items-end;
+}
+@utility flex-c-bt {
+  @apply flex flex-col justify-between items-stretch;
+}

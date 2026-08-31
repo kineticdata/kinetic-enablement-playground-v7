@@ -1,0 +1,57 @@
+@import 'tailwindcss';
+@import './assets/styles/daisyui.css';
+@import './assets/styles/font.css' layer(base);
+@import './assets/styles/layout.css';
+@import './assets/styles/avatar.css';
+@import './assets/styles/buttons.css';
+@import './assets/styles/forms.css';
+@import './assets/styles/menu.css';
+@import './assets/styles/panels.css';
+@import './assets/styles/scrollbar.css';
+@import './assets/styles/toasts.css';
+@import './assets/styles/typography.css';
+@import './assets/styles/utilities.css';
+
+@theme {
+  --font-sans: 'Onest';
+
+  --text-h4: 1.125rem;
+  --text-h4--line-height: 1.75rem;
+  --text-h3: 1.25rem;
+  --text-h3--line-height: 2rem;
+  --text-h2: 1.5rem;
+  --text-h2--line-height: 2rem;
+  --text-h1: 2rem;
+  --text-h1--line-height: 2.5rem;
+  --text-d2: 2.5rem;
+  --text-d2--line-height: 2.75rem;
+  --text-d1: 4rem;
+  --text-d1--line-height: 1;
+
+  --width-screen-sm: var(--breakpoint-sm);
+  --width-screen-md: var(--breakpoint-md);
+  --width-screen-lg: var(--breakpoint-lg);
+  --width-screen-xl: var(--breakpoint-xl);
+}
+
+@source inline("{{m,-m,p}{,t,r,b,l,x,y}-{{0..24..1}},m-{,t,r,b,l,x,y}-auto}");
+@source inline("{bg,text,border}-{base-{100,200,300,content},primary{,-content},secondary{,-content},accent{,-content},neutral{,-content},info{,-content},success{,-content},warning{,-content},error{,-content}}");
+@source inline("rounded{,-{none,sm,md,lg,xl,2xl,3xl,full,box}}");
+@source inline("border{,-{t,r,b,l,x,y}}{,-{{0..8..1}}}");
+@source inline("shadow{,-{none,xs,sm,md,lg,xl,2xl}}");
+@source inline("{d1,d2,h1,h2,h3,h4,h5,h6}");
+@source inline("text-{xs,sm,base,lg,xl,2xl,3xl,4xl,5xl,left,center,right}");
+@source inline("font-{light,normal,medium,semibold,bold,extrabold}");
+@source inline("{underline,uppercase,lowercase,capitalize,italic}");
+@source inline("{trunacte,line-clamp-{1..5..1}}");
+@source inline("{w,h}-{auto,px,full,screen,1/5,2/5,3/5,4/5,1/12,2/12,3/12,4/12,5/12,6/12,7/12,8/12,9/12,10/12,11/12,{0..24..1}}");
+@source inline("max-w-{0,none,full,screen,xs,sm,md,lg,xl,screen-{sm,md,lg,xl,2xl}}");
+@source inline("max-h-{none,full,screen,-{0..96..16}}");
+@source inline("min-{w,h}-{0,auto,full,screen}");
+@source inline("{inline,block,inline-block,flex,inline-flex,hidden,sr-only}");
+@source inline("gap{,-x,-y}-{{0..24..1}}");
+@source inline("flex-{auto,initial,none,full,0,1,wrap}");
+@source inline("flex{,-c}-{ss,sc,se,st,cs,cc,ce,ct,es,ec,ee,et,bs,bc,be,bt}")
+@source inline("kbtn{,-{primary,seconday,accent,neutral,info,success,warning,error,outline,ghost,xs,sm,md,lg,xl,circle,block}}");
+@source inline("kbadge{,-{primary,seconday,accent,neutral,info,success,warning,error,outline,ghost,xs,sm,md,lg,xl}}");
+@source inline("kalert{,-{info,success,warning,error,outline,soft,xs,sm,md,lg,xl,vertical,horizontal}}");

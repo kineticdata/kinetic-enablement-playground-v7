@@ -1,0 +1,325 @@
+/******************************************************************************
+ * FORMS
+ *
+ * Styling for form elements and the Kinetic form.
+ *
+ * Custom Classes:
+ *  .empty-label
+ *    Use on a checkbox field element when you have a required checkbox without
+ *    a label to move the asterisk to be on the same line as the checkbox.
+ *  .vertical
+ *    Use on a checkbox or radio field element when you want the options to
+ *    be stacked vertically.
+ *    Use on a section with buttons when you want the children to be stacked
+ *    vertically.
+ *    Children will be set to full width.
+ *  .cols-2, .cols-3, .cols-4
+ *    Use on a section to align its children into 2, 3, or 4 columns.
+ *    Use on a checkbox or radio field element to align its options into 2, 3,
+ *    or 4 columns.
+ *    These classes don't work if you also use the vertical class on the same
+ *    element.
+ *  .full-width
+ *    Use on a child of a section that uses one of the above column classes to
+ *    make this child span the full width.
+ *  .align-right
+ *    Use on a section to align its children to the right.
+ *    Use on a button to align it and any buttons after it to the right.
+ *    This class only works if the relevant elements aren't full width, and is
+ *    mainly useful for buttons.
+ *  .full-width-form
+ *    Use anywhere inside a form to make it span the full width of the page.
+ ******************************************************************************/
+
+@layer base {
+  .field {
+    input[type='number']:not(.unstyled),
+    input[type='date']:not(.unstyled),
+    input[type='datetime-local']:not(.unstyled),
+    input[type='time']:not(.unstyled),
+    input[type='password']:not(.unstyled),
+    input[type='text']:not(.unstyled) {
+      @apply kinput w-full;
+    }
+
+    select:not(.unstyled) {
+      @apply kselect w-full;
+    }
+
+    textarea:not(.unstyled) {
+      @apply ktextarea w-full;
+    }
+
+    input[type='checkbox']:not(.unstyled) {
+      @apply kcheckbox;
+    }
+
+    input[type='radio']:not(.unstyled) {
+      @apply kradio;
+    }
+
+    > label {
+      @apply block flex-none w-full text-sm font-semibold leading-4 pb-2 text-base-content/70 empty:hidden;
+    }
+    &.required > label {
+      @apply after:text-[var(--required-field-color,red)] after:font-bold;
+      &:after {
+        content: ' *';
+      }
+    }
+    &.has-error {
+      input[type='number']:not(.unstyled),
+      input[type='date']:not(.unstyled),
+      input[type='datetime-local']:not(.unstyled),
+      input[type='time']:not(.unstyled),
+      input[type='password']:not(.unstyled),
+      input[type='text']:not(.unstyled),
+      select:not(.unstyled),
+      textarea:not(.unstyled) {
+        --kinput-color: var(--color-error);
+      }
+    }
+  }
+
+  /* Styling within a Kinetic form */
+  .embedded-core-form form {
+    > .errors {
+      @apply kalert kalert-error kalert-vertical w-full justify-start justify-items-start text-left gap-1;
+      > p {
+        @apply font-semibold;
+      }
+    }
+
+    &,
+    [data-element-type='section'] {
+      @apply flex flex-wrap justify-start content-start items-stretch gap-5 w-full;
+
+      > [data-element-type='content'] {
+        @apply block w-full;
+        &:empty {
+          @apply hidden;
+        }
+      }
+
+      > [data-element-type='button'] {
+        @apply max-md:block max-md:w-full self-start flex-none;
+
+        &.align-right {
+          @apply ml-auto;
+        }
+      }
+
+      &.vertical {
+        @apply flex-col items-stretch;
+        > [data-element-type='button'] {
+          @apply self-auto;
+        }
+      }
+
+      &:not(.vertical) {
+        &.cols-2 {
+          > [data-element-type] {
+            @media (min-width: 768px) {
+              flex: 0 0 calc((100% - 1.25rem) / 2);
+            }
+          }
+        }
+        &.cols-3 {
+          > [data-element-type] {
+            @media (min-width: 768px) {
+              flex: 0 0 calc((100% - 1.25rem * 2) / 3);
+            }
+          }
+        }
+        &.cols-4 {
+          > [data-element-type] {
+            @media (min-width: 768px) {
+              flex: 0 0 calc((100% - 1.25rem * 3) / 4);
+            }
+          }
+        }
+        > [data-element-type].full-width {
+          flex: 0 0 100%;
+        }
+      }
+
+      &.align-right {
+        @apply justify-end;
+      }
+    }
+
+    [data-element-type='section'] {
+      > .section-title {
+        @apply h3 block w-full;
+      }
+      > [data-element-type='section'] > .section-title {
+        @apply h4;
+      }
+    }
+
+    [data-element-type='wrapper'] {
+      @apply relative block w-full;
+
+      input[type='number']:not(.unstyled),
+      input[type='date']:not(.unstyled),
+      input[type='datetime-local']:not(.unstyled),
+      input[type='time']:not(.unstyled),
+      input[type='password']:not(.unstyled),
+      input[type='text']:not(.unstyled) {
+        @apply kinput w-full;
+      }
+      select:not(.unstyled) {
+        @apply kselect w-full;
+      }
+      textarea:not(.unstyled) {
+        @apply ktextarea w-full;
+      }
+      input[type='checkbox']:not(.unstyled) {
+        @apply kcheckbox;
+      }
+      input[type='radio']:not(.unstyled) {
+        @apply kradio;
+      }
+
+      .field-label {
+        @apply block flex-none w-full text-sm font-semibold leading-4 pb-2 text-base-content/70 empty:hidden;
+      }
+      &.required .field-label {
+        @apply after:text-[var(--required-field-color,red)] after:font-bold;
+        &:after {
+          content: ' *';
+        }
+      }
+      &.empty-label {
+        .field-label {
+          @apply hidden;
+        }
+        &.required {
+          @apply after:text-[var(--required-field-color,red)] after:font-bold relative after:absolute after:-top-1 after:-left-0;
+          &:after {
+            content: ' *';
+          }
+        }
+      }
+      &.has-error {
+        input,
+        select,
+        textarea {
+          --kinput-color: var(--color-error);
+        }
+      }
+
+      &.checkbox,
+      &.radio {
+        @apply flex justify-start content-start items-start flex-wrap gap-3 w-full max-md:flex-col;
+        .field-label {
+          @apply -mb-3;
+        }
+        label:not(.field-label) {
+          @apply flex-sc gap-2;
+        }
+        &.vertical {
+          @apply flex-col items-stretch;
+        }
+        &:not(.vertical) {
+          @media (min-width: 768px) {
+            &.cols-2 {
+              > label:not(.field-label) {
+                flex: 0 0 calc((100% - 0.75rem) / 2);
+              }
+            }
+            &.cols-3 {
+              > label:not(.field-label) {
+                flex: 0 0 calc((100% - 0.75rem * 2) / 3);
+              }
+            }
+            &.cols-4 {
+              > label:not(.field-label) {
+                flex: 0 0 calc((100% - 0.75rem * 3) / 4);
+              }
+            }
+          }
+        }
+      }
+
+      /* Attachments */
+      .fileinput-button {
+        @apply kbtn kbtn-outline kbtn-lg border-dashed bg-no-repeat focus-within:outline-2 !pl-11 py-2.25;
+        &:before {
+          content: 'x';
+          @apply block absolute left-4 size-6 bg-base-content;
+          mask: url(./icons/file-plus.svg);
+        }
+      }
+      .file-table {
+        @apply table;
+        .file-header {
+          @apply table-header-group;
+          .file-row {
+            @apply table-row;
+            span {
+              @apply pr-5 py-1 table-cell text-base-content/70 font-semibold text-xs md:text-sm;
+            }
+          }
+        }
+        .file-container {
+          @apply table-row-group;
+          .file-row {
+            @apply table-row;
+            span {
+              @apply pr-5 py-1 table-cell max-md:text-sm;
+              &:first-child {
+                overflow-wrap: anywhere;
+              }
+              a {
+                @apply text-base-content/70 font-medium italic hover:underline hover:text-base-content focus-visible:underline focus-visible:text-base-content;
+              }
+            }
+          }
+        }
+
+        + .empty-message {
+          @apply text-base-content/70 italic font-medium text-xs md:text-sm;
+        }
+      }
+      &.empty .file-table {
+        display: none;
+      }
+    }
+  }
+}
+
+@utility kinput {
+  &:focus,
+  &:focus-within {
+    --kinput-color: oklch(from var(--color-primary) l c h / 0.7);
+  }
+}
+@utility kselect {
+  &:focus,
+  &:focus-within {
+    --kinput-color: oklch(from var(--color-primary) l c h / 0.7);
+  }
+}
+@utility ktextarea {
+  &:focus,
+  &:focus-within {
+    --kinput-color: oklch(from var(--color-primary) l c h / 0.7);
+  }
+}
+@utility kcheckbox {
+  &:focus-visible {
+    --kinput-color: oklch(from var(--color-primary) l c h / 0.7);
+  }
+}
+@utility kradio {
+  &:focus-visible {
+    --kinput-color: oklch(from var(--color-primary) l c h / 0.7);
+  }
+}
+
+@custom-variant full-form {
+  &:has(.full-width-form) {
+    @slot;
+  }
+}

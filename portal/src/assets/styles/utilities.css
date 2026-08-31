@@ -1,0 +1,38 @@
+/******************************************************************************
+ * Utilities
+ *
+ * Various utility classes.
+ ******************************************************************************/
+
+/* Update border utility to default the color */
+@utility border {
+  border-color: var(--color-base-300);
+}
+
+/* Update card utility to default to having a border */
+@utility kcard {
+  @apply border;
+}
+
+/* Update the list-row utility to have items centered */
+@utility klist-row {
+  @apply items-center;
+}
+
+/* Utility for logo sizing */
+@utility logo {
+  @apply h-10 w-full max-w-45 object-contain;
+}
+
+/* Utilities for icon boxes */
+@utility icon-box {
+  @apply flex-none flex-cc h-9 w-9 bg-base-200 rounded-box;
+}
+@utility icon-box-lg {
+  @apply icon-box h-12 w-12;
+}
+
+/* Utility for adding a focus ring */
+@utility focus-ring {
+  @apply focus-visible:isolate focus-visible:outline-2 focus-visible:outline-solid;
+}
