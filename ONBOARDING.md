@@ -39,8 +39,8 @@ mentions them, it doesn't apply here.
 ### Step 1 — Clone the repo
 
 ```bash
-git clone <this-repo-url>
-cd <repo-directory>
+git clone https://github.com/kineticdata/kinetic-enablement-playground.git
+cd kinetic-enablement-playground
 ```
 
 **You should see:** a directory containing, among other things, `setup.sh`,
