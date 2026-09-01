@@ -2,19 +2,40 @@
 // Cross-platform setup for the Kinetic enablement playground.
 // Checks and reports; fixes only what is safe. Zero dependencies. Idempotent.
 
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, writeFileSync, readFileSync, mkdirSync, chmodSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
-import { join, dirname } from 'node:path';
+import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  meetsFloor, normalizeSpaceUrl, mcpEndpoint, mcpServerName,
-  cursorMcpConfig, vscodeMcpConfig, proxyHostFromEnv, environmentsMatch,
+  meetsFloor, meetsMinorFloor, normalizeSpaceUrl, mcpServerName, mcpCommandArgs,
+  cursorMcpConfig, vscodeMcpConfig, envFileContents, proxyHostFromEnv,
+  environmentsMatch,
 } from './lib/setup-core.mjs';
 
-const ROOT = dirname(fileURLToPath(import.meta.url));
-const NODE_FLOOR = 20;
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)));
 const WIN = process.platform === 'win32';
+
+// The Core track's Node floor. Deliberately major-only, and deliberately 20:
+// the portal needs nothing newer, and AI is optional.
+const NODE_FLOOR = 20;
+// The optional MCP path additionally needs Node's native `--env-file`, which
+// landed in 20.6.0. Checked only when the partner opts in, so a Node 20.0
+// machine still completes the Core track.
+const MCP_NODE_FLOOR = { major: 20, minor: 6 };
+
+// The MCP server the partner clones and builds locally.
+//
+// MCP_REF is the single place the cloned ref is named, so pinning the partner
+// build to a tag or a specific commit later is a one-line change here rather
+// than an edit scattered through the code and the docs.
+const MCP_REF = 'main';
+const MCP_REPO = 'https://github.com/kineticdata/kinetic-platform-mgnt-mcp-server.git';
+const MCP_DIRNAME = 'mcp-server';
+const MCP_DIR = join(ROOT, MCP_DIRNAME);
+const MCP_ENV = join(MCP_DIR, '.env');
+const MCP_ENTRY = join(MCP_DIR, 'dist', 'index.js');
+
 const remedies = [];
 
 const say = (m) => console.log(m);
@@ -22,15 +43,31 @@ const ok = (m) => say(`  OK    ${m}`);
 const warn = (m) => say(`  WARN  ${m}`);
 const bad = (m, fix) => { say(`  FAIL  ${m}`); remedies.push(fix); };
 
-// `yarn` and `claude` are .cmd shims on Windows; spawning them without a shell fails.
-// NOTE: with `shell: true` Node does not quote args — it concatenates them into one
-// `cmd.exe /d /s /c` string. Every arg passed here is metacharacter-free by
-// construction (literals, or hostname-legal text from `new URL()`), and `cwd` is
-// passed as an option rather than inlined. Keep it that way: adding a *path*
-// argument here would break on any Windows clone path containing a space.
+// `yarn`, `npm`, `git` and `claude` are .cmd shims on Windows; spawning them
+// without a shell fails.
+// NOTE: with `shell: true` Node does not quote args — it concatenates them into
+// one `cmd.exe /d /s /c` string. Pass every path-shaped argument through
+// `shellArg`, and prefer handing paths in via the `cwd` option (which is not
+// part of that string) over passing them as arguments at all.
 function run(cmd, args, opts = {}) {
-  return spawnSync(cmd, args, { encoding: 'utf8', shell: WIN, ...opts });
+  return spawnSync(cmd, args.map(shellArg), { encoding: 'utf8', shell: WIN, ...opts });
 }
+
+// `node` is a real executable everywhere, never a shim, so it needs no shell —
+// which means its arguments reach it verbatim, spaces and all.
+function runNode(args, opts = {}) {
+  return spawnSync(process.execPath, args, { encoding: 'utf8', shell: false, ...opts });
+}
+
+// Only meaningful for the `shell: true` (Windows) path above. A Windows path
+// cannot contain a literal `"`, and inside double quotes cmd.exe stops treating
+// `&`, `^` and parentheses as metacharacters, so wrapping is both safe and
+// sufficient. On every other platform this is the identity function.
+function shellArg(a) {
+  const s = String(a);
+  return WIN && /[\s&^()|<>]/.test(s) ? `"${s}"` : s;
+}
+
 const have = (cmd) => {
   const r = run(cmd, ['--version']);
   return r.status === 0 ? (r.stdout || '').trim() : null;
@@ -89,13 +126,16 @@ ok('portal dependencies installed');
 const isTTY = Boolean(process.stdin.isTTY);
 
 const rl = isTTY ? createInterface({ input: process.stdin, output: process.stdout }) : null;
-const askTTY = (q) => new Promise((resolve) => {
+const askTTY = (q, { trim = true } = {}) => new Promise((resolve_) => {
   let settled = false;
-  const onClose = () => { if (!settled) { settled = true; resolve(''); } };
+  const finish = (v) => { if (!settled) { settled = true; resolve_(v); } };
+  const onClose = () => finish('');
   rl.once('close', onClose);
   rl.question(q).then((a) => {
-    if (!settled) { settled = true; rl.off('close', onClose); resolve(String(a ?? '').trim()); }
-  }).catch(() => { if (!settled) { settled = true; resolve(''); } });
+    const s = String(a ?? '');
+    rl.off('close', onClose);
+    finish(trim ? s.trim() : s);
+  }).catch(() => finish(''));
 });
 
 let piped = null;
@@ -116,6 +156,34 @@ const ask = async (q) => {
   return askTTY(q);
 };
 
+// A password must not be echoed to the terminal, and must not be trimmed
+// either — leading/trailing spaces are legal in a password and the .env writer
+// quotes the value so they survive.
+//
+// `_writeToOutput` is readline's own rendering hook: it is what draws every
+// keystroke. Silencing it is the standard way to read a secret with the
+// built-in readline. If a future Node drops the hook, say so out loud rather
+// than echoing a password while pretending not to.
+const askSecret = async (q) => {
+  if (piped) {
+    say(q);
+    return piped[pipedIndex++] ?? '';
+  }
+  const original = rl._writeToOutput;
+  if (typeof original !== 'function') {
+    warn('This Node build cannot suppress terminal echo — your password will be visible as you type.');
+    return askTTY(q, { trim: false });
+  }
+  rl._writeToOutput = () => {};
+  process.stdout.write(q);
+  try {
+    return await askTTY('', { trim: false });
+  } finally {
+    rl._writeToOutput = original;
+    process.stdout.write('\n');
+  }
+};
+
 say('\nOptional: AI assistance');
 say('  The skills library and MCP server are entirely optional.');
 say('  Answer "n" to both and the portal still runs normally.\n');
@@ -129,9 +197,22 @@ if (wantSkills) {
   say('  Skipped. Nothing else depends on it.');
 }
 
-const wantMcp = (await ask('\n  Connect the Kinetic MCP server? [y/N] ')).toLowerCase().startsWith('y');
+const wantMcp = (await ask('\n  Set up the Kinetic MCP server? (clones and builds it locally) [y/N] '))
+  .toLowerCase().startsWith('y');
 let spaceOrigin = null;
-if (wantMcp) {
+
+// Every failure inside this block is a WARN that breaks out, never an exit:
+// the AI track is optional, so a partner who cannot build the MCP server must
+// still finish setup with a working portal.
+if (wantMcp) mcpTrack: {
+  if (!meetsMinorFloor(nodeV, MCP_NODE_FLOOR.major, MCP_NODE_FLOOR.minor)) {
+    warn(`node ${nodeV} cannot load the MCP server's credential file — skipping MCP setup.`);
+    say(`        Node's --env-file is native from ${MCP_NODE_FLOOR.major}.${MCP_NODE_FLOOR.minor}.0 onward; on older Node the`);
+    say('        process dies on an unknown flag before the server starts. Install a');
+    say('        newer Node and re-run. The portal is unaffected and still runs here.');
+    break mcpTrack;
+  }
+
   let parsed = null;
   let attempts = 0;
   while (!parsed && attempts < 3) {
@@ -141,11 +222,89 @@ if (wantMcp) {
     if (!parsed) say('  That does not look like a space URL. Try again.');
   }
   if (!parsed) {
-    warn('No valid space URL given after 3 attempts — skipping MCP wiring.');
-  } else {
+    warn('No valid space URL given after 3 attempts — skipping MCP setup.');
+    break mcpTrack;
+  }
   spaceOrigin = parsed.origin;
-  const endpoint = mcpEndpoint(parsed.origin);
   const name = mcpServerName(parsed.slug);
+
+  // ---- Clone -------------------------------------------------------------
+  if (existsSync(MCP_DIR)) {
+    ok(`${MCP_DIRNAME}/ already present — left untouched (delete it to re-clone)`);
+  } else {
+    say(`\n  Cloning the MCP server (branch ${MCP_REF})`);
+    // The destination is a bare relative name resolved through `cwd`, not an
+    // absolute path argument: see the `run` note about Windows arg joining.
+    const r = run('git', ['clone', '--depth', '1', '--single-branch', '--branch', MCP_REF,
+      MCP_REPO, MCP_DIRNAME], { cwd: ROOT, stdio: 'inherit' });
+    if (r.status !== 0 || !existsSync(MCP_DIR)) {
+      warn('git clone failed — skipping the rest of the MCP setup. The portal is unaffected.');
+      break mcpTrack;
+    }
+    ok(`${MCP_DIRNAME}/ cloned (gitignored — it is a local artifact, never committed)`);
+  }
+
+  // ---- Credentials -------------------------------------------------------
+  // These go into mcp-server/.env at mode 0600 and nowhere else: not into a
+  // client config, not into the terminal, not into git.
+  if (existsSync(MCP_ENV)) {
+    ok(`${MCP_DIRNAME}/.env already exists — left untouched`);
+  } else {
+    say(`\n  Credentials for ${spaceOrigin}. They are written only to`);
+    say(`  ${MCP_DIRNAME}/.env with mode 0600 — never to an MCP client config.`);
+    const username = await ask('  Kinetic username: ');
+    const password = await askSecret('  Kinetic password (not shown as you type): ');
+    if (!username || !password) {
+      warn(`No credentials given — ${MCP_DIRNAME}/.env not written.`);
+      say(`        Copy ${MCP_DIRNAME}/.env.example to ${MCP_DIRNAME}/.env, fill it in, then re-run.`);
+    } else {
+      const body = envFileContents({ serverUrl: spaceOrigin, username, password });
+      if (body === null) {
+        // Node's --env-file has no escape sequence inside quotes, so a value
+        // containing all three quote characters cannot be represented.
+        warn("That password cannot be represented in a .env file (it contains ', \" and ` all three).");
+        say(`        Write ${MCP_DIRNAME}/.env by hand, then re-run.`);
+      } else {
+        try {
+          writeFileSync(MCP_ENV, body, { mode: 0o600, flag: 'wx' });
+          try { chmodSync(MCP_ENV, 0o600); } catch { /* chmod is a no-op on Windows */ }
+          ok(`${MCP_DIRNAME}/.env written, mode 0600${WIN ? ' (POSIX modes do not apply on Windows)' : ''}`);
+        } catch (e) {
+          warn(`Could not write ${MCP_DIRNAME}/.env: ${e.code || e.message}`);
+        }
+      }
+    }
+  }
+
+  // ---- Build -------------------------------------------------------------
+  say('\n  Building the MCP server (npm install, then npm run build)');
+  let built = false;
+  const npmInstall = run('npm', ['install'], { cwd: MCP_DIR, stdio: 'inherit' });
+  if (npmInstall.status !== 0) {
+    warn(`npm install failed in ${MCP_DIRNAME}/ — see the output above.`);
+  } else {
+    const build = run('npm', ['run', 'build'], { cwd: MCP_DIR, stdio: 'inherit' });
+    if (build.status !== 0) {
+      warn(`npm run build failed in ${MCP_DIRNAME}/ — see the output above.`);
+    } else if (!existsSync(MCP_ENTRY)) {
+      warn(`build finished but ${join(MCP_DIRNAME, 'dist', 'index.js')} is missing.`);
+    } else {
+      built = true;
+      ok('MCP server built');
+    }
+  }
+  if (!built) {
+    say('        MCP client configs were not written — fix the build and re-run setup');
+    say('        to finish. Nothing in the portal depends on this.');
+    break mcpTrack;
+  }
+
+  // ---- Client configuration ----------------------------------------------
+  // Both paths are absolute on purpose: a relative --env-file resolves against
+  // the MCP client's working directory, not the server's, and silently loads
+  // nothing at all.
+  const args = mcpCommandArgs(MCP_ENV, MCP_ENTRY);
+  const manual = ['node', ...args].join(' ');
 
   // Claude Code: run the real command rather than printing it.
   // `claude mcp add` exits 1 with "already exists" on a second run, so probe
@@ -157,39 +316,55 @@ if (wantMcp) {
     if (registered()) {
       ok(`Claude Code server "${name}" already configured — left untouched`);
     } else {
-      const r = run('claude', ['mcp', 'add', '--transport', 'http', name, endpoint], { cwd: ROOT, stdio: 'inherit' });
-      if (r.status === 0) {
-        ok(`Claude Code server "${name}" added — run /mcp inside Claude Code to sign in`);
-      } else if (registered()) {
-        ok(`Claude Code server "${name}" already configured — left untouched`);
+      const r = run('claude', ['mcp', 'add', name, '--', 'node', ...args], { cwd: ROOT, stdio: 'inherit' });
+      if (r.status === 0 || registered()) {
+        ok(`Claude Code server "${name}" added`);
       } else {
-        warn(`claude mcp add failed. Run manually:\n          claude mcp add --transport http ${name} ${endpoint}`);
+        warn(`claude mcp add failed. Run manually:\n          claude mcp add ${name} -- ${manual}`);
       }
     }
   } else {
-    say(`  Claude Code CLI not found. If you use it later, run:\n          claude mcp add --transport http ${name} ${endpoint}`);
+    say(`  Claude Code CLI not found. If you use it later, run:\n          claude mcp add ${name} -- ${manual}`);
   }
 
   // Cursor and Copilot read files; write them without clobbering.
   const targets = [
-    { file: join(ROOT, '.cursor', 'mcp.json'), body: cursorMcpConfig(name, endpoint), label: 'Cursor' },
-    { file: join(ROOT, '.vscode', 'mcp.json'), body: vscodeMcpConfig(name, endpoint), label: 'Copilot / VS Code' },
+    { file: join(ROOT, '.cursor', 'mcp.json'), body: cursorMcpConfig(name, args), label: 'Cursor' },
+    { file: join(ROOT, '.vscode', 'mcp.json'), body: vscodeMcpConfig(name, args), label: 'Copilot / VS Code' },
   ];
   for (const t of targets) {
     if (existsSync(t.file)) {
       warn(`${t.label} config already exists — left untouched (${t.file})`);
-      say(`        Add the server by hand if it is missing there: ${name} -> ${endpoint}`);
+      say(`        Add the server by hand if it is missing there: ${name} -> ${manual}`);
       continue;
     }
     mkdirSync(dirname(t.file), { recursive: true });
     writeFileSync(t.file, JSON.stringify(t.body, null, 2) + '\n');
-    ok(`${t.label} config written`);
+    ok(`${t.label} config written (no credentials in it)`);
   }
 
-  say(`\n  Only these 11 tools are needed; disable the rest in your client:`);
-  say('    get_context, get_api_spec, execute_api, list_kapps, list_forms,');
-  say('    get_form, search_submissions, get_submission, list_trees, get_tree, list_errors');
-  say('  Cursor errors above ~40 enabled tools, and this server exposes 79.');
+  say('\n  Tool surface: the default "consolidated" mode exposes 26 tools that');
+  say('  cover all 277 platform operations — one tool per resource family,');
+  say('  dispatched by `action` (and `object` where a family spans objects).');
+  say(`  To change it, set KINETIC_MCP_MODE in ${MCP_DIRNAME}/.env:`);
+  say('    slim (10 tools) | consolidated (26, default) | contexts (280) | full (559)');
+
+  // ---- Verify ------------------------------------------------------------
+  // The server ships its own read-only smoke test. Run it rather than
+  // inventing a check here, and show the partner its PASS/FAIL lines.
+  if (existsSync(MCP_ENV)) {
+    say(`\n  Verifying against ${spaceOrigin} — the server's own read-only smoke test`);
+    const r = runNode([`--env-file=${MCP_ENV}`, join('scripts', 'smoke-test.js')],
+      { cwd: MCP_DIR, stdio: 'inherit' });
+    if (r.status === 0) {
+      ok('MCP smoke test passed — the server can read your space');
+    } else {
+      warn('MCP smoke test did not pass — read the PASS/FAIL lines above.');
+      say(`        Re-run it any time:  node --env-file=${MCP_ENV} scripts/smoke-test.js`);
+      say(`        (from ${MCP_DIRNAME}/. Most failures are a wrong space URL or password in .env.)`);
+    }
+  } else {
+    say(`  Smoke test skipped — ${MCP_DIRNAME}/.env is missing. Fill it in and re-run setup.`);
   }
 }
 

@@ -44,3 +44,8 @@ frontend-testing/.env
 # is already covered by the .vscode/* rule above, but .cursor only ignores
 # mcp.json — .cursor/rules/ stays tracked).
 .cursor/mcp.json
+
+# The locally cloned and built Kinetic MCP server (setup.mjs clones it here).
+# A per-partner artifact — never committed. It also holds mcp-server/.env, which
+# carries real space credentials, so this rule is a security boundary too.
+mcp-server/
