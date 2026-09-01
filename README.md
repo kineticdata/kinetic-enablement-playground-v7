@@ -1,8 +1,8 @@
 # Kinetic Enablement Playground
 
 A working Kinetic Platform portal for partners to clone, run against their
-own space, and learn from — with an optional AI layer (a skills library and
-an MCP server) on top of it.
+own space, and learn from — with an optional AI layer (a skills library and a
+locally built MCP server) on top of it.
 
 Start here: **[ONBOARDING.md](ONBOARDING.md)** — prerequisites, setup, and the
 two independent tracks (Core, plus an optional AI layer).
