@@ -315,9 +315,9 @@ that holds them.
 (The setup script never overwrites an existing `.cursor/mcp.json` or
 `.vscode/mcp.json` — if one was already there, you'll see a `WARN` naming the
 file it left alone, followed by the command to add there yourself. Re-running
-setup is safe either way: an already-present `mcp-server/`, an existing
-`.env`, and a Claude Code server that is already registered are each reported
-and left untouched.)
+setup is safe either way: an existing `.env` and a Claude Code server that is
+already registered are each reported and left untouched. `mcp-server/` itself
+is the one exception — a re-run brings it up to date; see "Updating" below.)
 
 The server is registered under the name **`kinetic-<space-slug>`** — e.g.
 `kinetic-acme-dev` for `https://acme-dev.kinopsdev.io` — never a generic
@@ -345,6 +345,38 @@ credentials.
 setup script runs this for you at the end and reports the result. A `FAIL`
 here is almost always a wrong space URL, username or password in
 `mcp-server/.env`.
+
+### Updating
+
+The MCP server is under active development, so re-run `./setup.sh` (or
+`.\setup.cmd`) any time to bring `mcp-server/` up to the latest commit on its
+`main` branch. If it actually moved, setup rebuilds it for you (`npm
+install`, then `npm run build`) and re-runs the smoke test; if nothing
+changed upstream, it says so and does not reinstall or rebuild — a re-run
+with nothing to do is fast.
+
+**Local edits block the update, by design.** If you've poked at the server
+code, the update is skipped rather than risking your work — you'll see a
+`WARN` naming the reason:
+
+- *Local edits* — `git status` inside `mcp-server/` found uncommitted
+  changes. Commit or `git stash` them, then re-run setup from the repo root.
+- *Diverged* — your local `mcp-server/` has commits `origin/main` doesn't
+  (e.g. you committed locally). Setup only ever fast-forwards, never resets
+  or force-checks-out; resolve by hand (rebase, or delete and re-clone if you
+  don't need the local commits) and re-run.
+- *Fetch failed* — offline, no GitHub auth, or GitHub is down. Setup warns
+  and continues with the existing checkout rather than aborting; the rest of
+  setup (and an already-working MCP server) is unaffected.
+
+`mcp-server/.env` is never touched by any of this — it's gitignored inside
+the server's own repo, so git fetch/merge leave it alone.
+
+This is a **different mechanism from the AI skills library.** That's a
+pinned git submodule (`ai-skills/`), so you get newer skills by pulling
+*this* repo and re-running setup's submodule step — not through the MCP
+server's update path above. See "Two ways to get the skills library" above;
+don't confuse the two update paths.
 
 ### The tool surface
 

@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import {
   meetsFloor, meetsMinorFloor, normalizeSpaceUrl, mcpServerName, mcpCommandArgs,
   cursorMcpConfig, vscodeMcpConfig, envFileContents, proxyHostFromEnv,
-  environmentsMatch,
+  environmentsMatch, mcpUpdateResult,
 } from './lib/setup-core.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)));
@@ -72,6 +72,58 @@ const have = (cmd) => {
   const r = run(cmd, ['--version']);
   return r.status === 0 ? (r.stdout || '').trim() : null;
 };
+
+const shortHeadSha = () => {
+  const r = run('git', ['rev-parse', '--short', 'HEAD'], { cwd: MCP_DIR });
+  return r.status === 0 ? (r.stdout || '').trim() : null;
+};
+
+// Brings an existing mcp-server/ up to MCP_REF without ever discarding local
+// work: `git status --porcelain` is checked, and honored, before any network
+// call is made. Fetch, then `git merge --ff-only` — never a reset, never a
+// force checkout. A failed fetch (offline, auth, GitHub down) is a WARN that
+// falls back to the existing checkout, not an abort of setup.
+// Returns whether the caller needs to rebuild (npm install + npm run build).
+function updateMcpServer() {
+  const status = run('git', ['status', '--porcelain'], { cwd: MCP_DIR });
+  if (status.status !== 0) {
+    warn(`${MCP_DIRNAME}/: could not check git status — skipping update, using the existing checkout.`);
+    return false;
+  }
+  const dirty = Boolean((status.stdout || '').trim());
+
+  let fetchFailed = false;
+  let diverged = false;
+  let beforeSha = null;
+  let afterSha = null;
+
+  if (!dirty) {
+    beforeSha = shortHeadSha();
+    const fetch = run('git', ['fetch', 'origin'], { cwd: MCP_DIR });
+    fetchFailed = fetch.status !== 0;
+    if (!fetchFailed) {
+      const merge = run('git', ['merge', '--ff-only', `origin/${MCP_REF}`], { cwd: MCP_DIR });
+      diverged = merge.status !== 0;
+      afterSha = diverged ? beforeSha : shortHeadSha();
+    }
+  }
+
+  const result = mcpUpdateResult({ dirty, fetchFailed, diverged, beforeSha, afterSha });
+  if (result.status === 'skipped' && result.reason === 'dirty') {
+    warn(`${MCP_DIRNAME}/ has local edits — skipping update to avoid discarding them.`);
+    say(`        Commit or stash your changes in ${MCP_DIRNAME}/, then re-run setup to update.`);
+  } else if (result.status === 'skipped' && result.reason === 'fetch-failed') {
+    warn(`${MCP_DIRNAME}/: git fetch failed (offline or GitHub unreachable) — continuing with the existing checkout.`);
+  } else if (result.status === 'skipped' && result.reason === 'diverged') {
+    warn(`${MCP_DIRNAME}/ has diverged from origin/${MCP_REF} and cannot fast-forward — skipping update.`);
+    say('        This usually means local commits exist. Resolve by hand (rebase, or a fresh clone), then re-run.');
+  } else if (result.status === 'up-to-date') {
+    ok(`${MCP_DIRNAME}/ already up to date (${result.sha})`);
+  } else if (result.status === 'updated') {
+    ok(`${MCP_DIRNAME}/ updated ${result.beforeSha} -> ${result.afterSha}`);
+  }
+  return result.needsBuild;
+}
 
 say('\nKinetic Enablement Playground — setup\n');
 
@@ -228,20 +280,31 @@ if (wantMcp) mcpTrack: {
   spaceOrigin = parsed.origin;
   const name = mcpServerName(parsed.slug);
 
-  // ---- Clone -------------------------------------------------------------
+  // ---- Clone / update ------------------------------------------------------
+  // The server is under active development on MCP_REF, so a re-run must bring
+  // an existing checkout up to date rather than leaving a partner on whatever
+  // commit they first cloned. `needsBuild` gates the (slow) npm install +
+  // build below: a fresh clone always needs it; an update needs it only when
+  // the fast-forward actually moved HEAD; "already up to date" and every
+  // skip need it not at all.
+  let needsBuild;
   if (existsSync(MCP_DIR)) {
-    ok(`${MCP_DIRNAME}/ already present — left untouched (delete it to re-clone)`);
+    needsBuild = updateMcpServer();
   } else {
     say(`\n  Cloning the MCP server (branch ${MCP_REF})`);
+    // Full branch history, not a shallow --depth 1 clone: the update path
+    // above relies on ordinary `git fetch` + `git merge --ff-only`, which a
+    // shallow clone complicates for no benefit here.
     // The destination is a bare relative name resolved through `cwd`, not an
     // absolute path argument: see the `run` note about Windows arg joining.
-    const r = run('git', ['clone', '--depth', '1', '--single-branch', '--branch', MCP_REF,
+    const r = run('git', ['clone', '--single-branch', '--branch', MCP_REF,
       MCP_REPO, MCP_DIRNAME], { cwd: ROOT, stdio: 'inherit' });
     if (r.status !== 0 || !existsSync(MCP_DIR)) {
       warn('git clone failed — skipping the rest of the MCP setup. The portal is unaffected.');
       break mcpTrack;
     }
     ok(`${MCP_DIRNAME}/ cloned (gitignored — it is a local artifact, never committed)`);
+    needsBuild = true;
   }
 
   // ---- Credentials -------------------------------------------------------
@@ -277,20 +340,33 @@ if (wantMcp) mcpTrack: {
   }
 
   // ---- Build -------------------------------------------------------------
-  say('\n  Building the MCP server (npm install, then npm run build)');
+  // Only rebuild when something actually changed (fresh clone or a real
+  // fast-forward update): re-running npm install/build on every setup run
+  // for an unchanged checkout is wasted minutes for no effect.
   let built = false;
-  const npmInstall = run('npm', ['install'], { cwd: MCP_DIR, stdio: 'inherit' });
-  if (npmInstall.status !== 0) {
-    warn(`npm install failed in ${MCP_DIRNAME}/ — see the output above.`);
+  if (!needsBuild && existsSync(MCP_ENTRY)) {
+    built = true;
+    ok('MCP server build unchanged — skipping npm install/build');
   } else {
-    const build = run('npm', ['run', 'build'], { cwd: MCP_DIR, stdio: 'inherit' });
-    if (build.status !== 0) {
-      warn(`npm run build failed in ${MCP_DIRNAME}/ — see the output above.`);
-    } else if (!existsSync(MCP_ENTRY)) {
-      warn(`build finished but ${join(MCP_DIRNAME, 'dist', 'index.js')} is missing.`);
+    if (!needsBuild) {
+      // Safety net: nothing changed, but dist/index.js is missing anyway
+      // (e.g. an interrupted earlier build) — build rather than leave it broken.
+      warn(`${join(MCP_DIRNAME, 'dist', 'index.js')} is missing — building anyway.`);
+    }
+    say('\n  Building the MCP server (npm install, then npm run build)');
+    const npmInstall = run('npm', ['install'], { cwd: MCP_DIR, stdio: 'inherit' });
+    if (npmInstall.status !== 0) {
+      warn(`npm install failed in ${MCP_DIRNAME}/ — see the output above.`);
     } else {
-      built = true;
-      ok('MCP server built');
+      const build = run('npm', ['run', 'build'], { cwd: MCP_DIR, stdio: 'inherit' });
+      if (build.status !== 0) {
+        warn(`npm run build failed in ${MCP_DIRNAME}/ — see the output above.`);
+      } else if (!existsSync(MCP_ENTRY)) {
+        warn(`build finished but ${join(MCP_DIRNAME, 'dist', 'index.js')} is missing.`);
+      } else {
+        built = true;
+        ok('MCP server built');
+      }
     }
   }
   if (!built) {
