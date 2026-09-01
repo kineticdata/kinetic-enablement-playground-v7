@@ -346,14 +346,13 @@ setup script runs this for you at the end and reports the result. A `FAIL`
 here is almost always a wrong space URL, username or password in
 `mcp-server/.env`.
 
-### The tool surface: 26 tools by default
+### The tool surface
 
-The default mode, `consolidated`, exposes **26 tools** that between them
-cover **all 277** platform API operations. There is one tool per resource
-family — `forms`, `submissions`, `kapps`, `users`, `teams`, `workflows`,
-`attribute_definitions`, and so on — and you choose the operation with an
-`action` parameter, plus an `object` parameter for the families that span
-several Kinetic objects:
+The default mode, `consolidated`, covers every platform API operation with
+one tool per resource family — `forms`, `submissions`, `kapps`, `users`,
+`teams`, `workflows`, `attribute_definitions`, and so on — and you choose the
+operation with an `action` parameter, plus an `object` parameter for the
+families that span several Kinetic objects:
 
 ```json
 { "action": "list" }                                          // forms
@@ -374,23 +373,34 @@ Three things worth knowing:
 - **Scope is not identity.** A form is identified by its slug *within* a kapp,
   so fetching one needs `identifier` **and** `kappSlug`.
 
-26 tools sits comfortably under **Cursor's ~40-tool ceiling**, so the default
-needs no trimming there. If you run several MCP servers at once and are near
-the limit in aggregate, switch to the smallest surface by adding this to
-`mcp-server/.env`:
+The default mode is deliberately well under **Cursor's ~40-tool ceiling**;
+`contexts` and `full` are not, so they need trimming there. If you run
+several MCP servers at once and are near the limit in aggregate, switch to
+the smallest surface by adding this to `mcp-server/.env`:
 
 ```
 KINETIC_MCP_MODE=slim
 ```
 
-The four modes, all of which can reach all 277 operations:
+The four modes, all of which can reach every operation:
 
-| Mode | Tools | Notes |
+| Mode | Surface | Notes |
 | --- | --- | --- |
-| `consolidated` | 26 | The default. Resource families dispatched by `action`/`object`. |
-| `slim` | 10 | Smallest surface; reaches everything via `get_api_spec` + `execute_api`. |
-| `contexts` | 280 | One tool per operation. |
-| `full` | 559 | Legacy dual naming. **Do not use in Cursor** — it exceeds the tool limit. |
+| `consolidated` | Default | One tool per resource family, dispatched by `action`/`object`. |
+| `slim` | Smallest | A small generic surface; everything reached through generic tools that fetch the API spec and execute arbitrary requests. |
+| `contexts` | Granular | One tool per individual API operation. |
+| `full` | Legacy | Every operation under both its historical names. **Do not use in Cursor** — it exceeds the tool limit. |
+
+Exact tool counts are not listed here because they change as the server
+evolves — restating them here is exactly the kind of drift this doc should
+not own. Two places always have the current number:
+
+- **The server itself**, at startup, to stderr: `kinetic-platform-mcp:
+  mode=consolidated, N tools` (illustrative — `N` is whatever the running
+  server reports). The verify step above runs the server's own smoke test,
+  which surfaces this line for you.
+- **The server's own README**, which carries the current mode table:
+  https://github.com/kineticdata/kinetic-platform-mgnt-mcp-server#readme
 
 ### Before you create, update, or delete anything
 
@@ -475,7 +485,8 @@ credentials themselves with the smoke test:
 `mcp-server/`.
 
 **Cursor complains about too many tools**
-The default `consolidated` mode is 26 tools, under Cursor's ~40 ceiling, so
-this only happens if you run other MCP servers alongside it or set
-`KINETIC_MCP_MODE=contexts`/`full`. Set `KINETIC_MCP_MODE=slim` in
-`mcp-server/.env` for a 10-tool surface that still reaches every operation.
+The default `consolidated` mode is deliberately well under Cursor's ~40-tool
+ceiling, so this only happens if you run other MCP servers alongside it or
+set `KINETIC_MCP_MODE=contexts`/`full`. Set `KINETIC_MCP_MODE=slim` in
+`mcp-server/.env` for the smallest surface that still reaches every
+operation.

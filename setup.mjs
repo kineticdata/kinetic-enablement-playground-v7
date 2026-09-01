@@ -343,11 +343,14 @@ if (wantMcp) mcpTrack: {
     ok(`${t.label} config written (no credentials in it)`);
   }
 
-  say('\n  Tool surface: the default "consolidated" mode exposes 26 tools that');
-  say('  cover all 277 platform operations — one tool per resource family,');
-  say('  dispatched by `action` (and `object` where a family spans objects).');
-  say(`  To change it, set KINETIC_MCP_MODE in ${MCP_DIRNAME}/.env:`);
-  say('    slim (10 tools) | consolidated (26, default) | contexts (280) | full (559)');
+  say('\n  Tool surface: the default "consolidated" mode covers every platform');
+  say('  operation with one tool per resource family, dispatched by `action`');
+  say('  (and `object` where a family spans objects). Other modes trade that');
+  say('  off differently — `slim` is a small generic surface, `contexts` is');
+  say('  one tool per operation, `full` is the legacy surface with every');
+  say('  operation under both its historical names.');
+  say(`  To change it, set KINETIC_MCP_MODE in ${MCP_DIRNAME}/.env. The exact`);
+  say('  tool count for your mode is printed by the smoke test just below.');
 
   // ---- Verify ------------------------------------------------------------
   // The server ships its own read-only smoke test. Run it rather than

@@ -97,10 +97,10 @@ its approval workflow directly on your space.
 Note that you asked for *intent*, not tool names. That is deliberate — it is
 what makes the same prompt work in Claude Code, Cursor and Copilot alike, and
 it lets the assistant pick the right calls. If you want to follow along, or
-drive the tools yourself, the default `consolidated` tool surface is **26
-tools, one per resource family**, and you choose the operation with an
-`action` parameter (plus `object` for families that span several Kinetic
-objects). The route for this task is roughly:
+drive the tools yourself, the default `consolidated` tool surface has **one
+tool per resource family**, and you choose the operation with an `action`
+parameter (plus `object` for families that span several Kinetic objects).
+The route for this task is roughly:
 
 - `forms` with `action: "create"` — create the form, scoped by `kappSlug`
 - `forms` with `action: "get"` and `identifier: "<form-slug>"` — read it back
@@ -118,9 +118,10 @@ Two conventions cover most of what you'll see:
   supports the action, the server infers it; if several could apply, the error
   names exactly which ones.
 
-If your assistant is running the server in `slim` mode instead (10 tools), it
-will reach the same endpoints through `get_api_spec` and `execute_api`. Either
-way the result on your space is identical.
+If your assistant is running the server in `slim` mode instead, it will
+reach the same endpoints through generic tools that fetch the API spec and
+execute arbitrary requests. Either way the result on your space is
+identical.
 
 This isn't a mockup or a code sample, it is **incremental seeding**: real
 platform artifacts (a form, a workflow) created from a plain-English
