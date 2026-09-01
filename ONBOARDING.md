@@ -207,7 +207,8 @@ newer, and this whole track is optional. Check with `node --version`.
 
 #### 1. Clone and build it
 
-From the root of this repo:
+Every command in this section starts from the root of this repo (the
+directory holding `setup.sh` and `ONBOARDING.md`) and ends back there.
 
 ```bash
 git clone https://github.com/kineticdata/kinetic-platform-mgnt-mcp-server.git mcp-server
@@ -217,6 +218,8 @@ npm run build
 cd ..
 ```
 
+The same five commands work verbatim in PowerShell and `cmd.exe`.
+
 `mcp-server/` is gitignored. It is a per-partner local artifact — never
 commit it.
 
@@ -225,10 +228,22 @@ commit it.
 The server reads your space URL, username and password from
 `mcp-server/.env`. Create it from the template the server ships:
 
+macOS / Linux:
+
 ```bash
 cd mcp-server
 cp .env.example .env
 chmod 600 .env
+cd ..
+```
+
+Windows (PowerShell or `cmd.exe`) — there is no `chmod`; NTFS file
+permissions are inherited from the directory instead:
+
+```powershell
+cd mcp-server
+copy .env.example .env
+cd ..
 ```
 
 Then edit `mcp-server/.env` so these three lines hold your real values:
@@ -239,9 +254,12 @@ KINETIC_USERNAME=your-username
 KINETIC_PASSWORD=your-password
 ```
 
+Leave every other line commented out — the defaults are what you want.
+
 The setup script writes this file for you (prompting for the username and
 password, and not echoing the password back), with mode `0600` so only your
-user account can read it.
+user account can read it. POSIX modes do not apply on Windows, so there the
+file is only as protected as the directory it sits in.
 
 > **Never commit this file, and never put credentials in an MCP client
 > config.** `mcp-server/` as a whole is in this repo's `.gitignore`, and the
@@ -310,10 +328,13 @@ mistake a dev-space result for a prod-space one.
 
 #### 4. Verify it
 
-The server ships its own read-only smoke test. From `mcp-server/`:
+The server ships its own read-only smoke test. It must be run from inside
+`mcp-server/`, and `--env-file` must still be absolute:
 
 ```bash
+cd mcp-server
 node --env-file=<abs-path>/mcp-server/.env scripts/smoke-test.js
+cd ..
 ```
 
 It performs a real MCP handshake, lists the tools, and makes a couple of
