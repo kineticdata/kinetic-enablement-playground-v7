@@ -20,8 +20,8 @@ if (!fs.existsSync(envFile)) {
     console.log(
       chalk.yellow(
         'Answer the following questions to complete the configuration. ' +
-          'The results are stored in /packages/app/.env.development.local ' +
-          'for further modification.',
+          'The answer is saved in portal/.env.development.local. ' +
+          '(Running the setup script at the repo root does this for you.)',
       ),
     );
     console.log('\n');

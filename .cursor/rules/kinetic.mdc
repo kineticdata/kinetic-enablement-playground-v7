@@ -17,3 +17,11 @@ If `ai-skills/skills/` is empty or missing, the submodule hasn't been
 initialized — that's a normal, supported state, not an error. Either
 initialize it with `git submodule update --init ai-skills`, or proceed
 without it.
+
+## Which space
+
+The Kinetic space this repo targets is `REACT_APP_PROXY_HOST` in
+`portal/.env.development.local`. If a Kinetic MCP server is connected, it is
+named `<space-slug>-kinetic` and serves that same space at
+`/app/platform-ai/mcp`. Before any create, update or delete through it,
+confirm which space you are on — say it back to the user if there is any doubt.

@@ -9,10 +9,14 @@ There are **two independent tracks**:
 - **Core track** — clone, run the setup script, start the portal, log in.
   Nothing here touches AI. If you only want to hand-write code against a
   running portal, finish this track and stop.
-- **Optional AI track** — a skills library, plus an MCP server you clone and
-  build locally, that together give an AI coding assistant (Claude Code,
-  Cursor, etc.) working knowledge of your Kinetic space. Skip it entirely if
-  you don't use one.
+- **Optional AI track** — connects your AI assistant (Claude Code, Cursor,
+  VS Code / Copilot, Codex, Gemini CLI, or any other MCP client) to the MCP
+  server built into your v7 space, and adds a skills library that gives it
+  working knowledge of the Kinetic Platform. Skip it entirely if you don't use
+  an AI assistant.
+
+This playground targets **Kinetic Platform v7**. The portal and the built-in
+MCP server both need a v7 space.
 
 Do the Core track first either way — the AI track assumes the portal already
 runs.
@@ -25,9 +29,7 @@ Exactly three things, and only three:
 
 1. **git**
 2. **Node.js 20 or newer, with yarn** (`corepack enable` will give you yarn
-   on a modern Node install, or `npm install -g yarn`). The Optional AI
-   track's MCP server needs **20.6.0** or newer — see that section. The Core
-   track does not.
+   on a modern Node install, or `npm install -g yarn`).
 3. **A text editor**
 
 That's the whole list. You do **not** need Ruby, and you do **not** need
@@ -42,8 +44,8 @@ mentions them, it doesn't apply here.
 ### Step 1 — Clone the repo
 
 ```bash
-git clone https://github.com/kineticdata/kinetic-enablement-playground.git
-cd kinetic-enablement-playground
+git clone https://github.com/kineticdata/kinetic-enablement-playground-v7.git
+cd kinetic-enablement-playground-v7
 ```
 
 **You should see:** a directory containing, among other things, `setup.sh`,
@@ -67,21 +69,30 @@ The leading `.\` matters: PowerShell — the default shell in Windows Terminal �
 will not run a script from the current directory without it. It is harmless in
 `cmd.exe`, so the same command works in either shell.
 
-Both scripts do the same thing: they check that `git`, `node`, and `yarn`
-are present and that Node meets the version 20 floor, then install the
-portal's dependencies with `yarn install`. That install step can take a
-few minutes the first time.
+Both scripts do the same thing, in this order:
 
-**You should see:** a `Checking prerequisites` section with `OK` lines for
-git, node, and yarn, followed by `Installing portal dependencies`, ending
-in `portal dependencies installed`.
+1. Check that `git`, `node` and `yarn` are present and Node is version 20
+   or newer.
+2. Ask its two questions — **both up front**, so you can walk away during
+   the slow part:
+   - **Your Kinetic space URL** (e.g. `https://your-space.kinops.io`). This
+     is the only time you're asked. It's saved to
+     `portal/.env.development.local`, which the portal and the AI setup both
+     read, so nothing asks for it again — not `yarn start`, and not a re-run
+     of setup.
+   - **Set up AI tools? [y/N]** For the Core track, answer **N** (or just
+     press Enter). The portal doesn't need it. The Optional AI track below
+     covers what "y" does.
+3. Install the portal's dependencies with `yarn install`. This can take a
+   few minutes the first time.
 
-After that, the script asks two yes/no questions about optional AI
-features (installing the skills library, setting up the MCP server). For
-the Core track, answer **N** (or just press Enter) to both — the portal
-does not need either. The Optional AI track below covers what those
-questions do if you want to come back and say yes later; you can also just
-re-run `./setup.sh` / `.\setup.cmd` at any time, since it's idempotent.
+**You should see:** `OK` lines for git, node and yarn, an `OK` line naming
+your space, then `Installing portal dependencies`, ending in
+`portal dependencies installed`.
+
+You can re-run `./setup.sh` / `.\setup.cmd` at any time — for example to say
+"y" to AI tools later. It's safe to repeat: it reuses your saved space URL and
+leaves anything already set up alone.
 
 **You should see:** the script finish with `Setup complete.` and a `Next:`
 section listing `cd portal` and `yarn start` as two separate commands — run
@@ -94,21 +105,21 @@ cd portal
 yarn start
 ```
 
-The first time you run this, it prompts you for the URL of the Kinetic
-Platform space you want the portal to connect to (e.g.
-`https://your-space.kinopsdev.io`). This happens automatically via
-`portal/src/setupEnv.cjs` — you never hand-edit an env file yourself.
+It connects to the space you gave the setup script — no questions asked.
+(If you skipped the setup script, `yarn start` asks for the space URL itself
+the first time.)
 
-**You should see:** a prompt asking for your Kinetic Platform server URL,
-then Vite starting up and printing that it's serving at
+**You should see:** a `Connecting to Kinetic Platform server:` line naming
+your space, then Vite starting up and printing that it's serving at
 `http://localhost:3000`.
 
 If port 3000 is already in use on your machine, Vite silently starts on
 `3001` (or the next free port) instead — it prints the actual URL it's
 using, so read that from the terminal rather than assuming 3000.
 
-If you need to change the space later, delete
-`portal/.env.development.local` and run `yarn start` again to be re-prompted.
+To switch to a different space later, delete `portal/.env.development.local`
+and re-run the setup script — it will ask for the URL again and set up the
+portal and your AI tools for the new space together.
 
 ### Step 4 — Log in
 
@@ -150,302 +161,203 @@ point is optional AI tooling.
 This track is additive. Nothing in it changes how the portal runs, and
 nothing in the Core track depends on it.
 
-### Two ways to get the skills library — pick at most one
+It has two independent parts. Answering "y" to **Set up AI tools?** in the
+setup script does both for you:
+
+1. **The MCP server** — lets your AI assistant work directly on your space
+   (read and create forms, workflows, submissions and so on). It is built
+   into every v7 space, so there is nothing to install or run: you point your
+   assistant at a URL and sign in.
+2. **The skills library** — background knowledge about the Kinetic Platform
+   (the API, form engine, workflow XML, integrations, React portal patterns,
+   step-by-step recipes) that your assistant reads from files.
+
+### The MCP server
+
+Every v7 space serves an MCP server at:
+
+```
+https://<your-space>/app/platform-ai/mcp
+```
+
+For example, `https://acme-dev.kinops.io/app/platform-ai/mcp`. It speaks
+standard MCP over HTTP and signs you in with OAuth — the same login you use
+for the space, in your browser. **No password is stored anywhere in this
+repo or in any config file.** Any AI tool that supports remote (HTTP) MCP
+servers with OAuth can use it.
+
+#### What setup does for you
+
+When you answer "y", setup:
+
+1. Checks that your space actually offers the server (it needs v7). If it
+   doesn't, setup says so and skips the rest — the portal is unaffected.
+2. Registers the server in **Claude Code** (if the `claude` CLI is installed),
+   by running `claude mcp add` for you.
+3. Adds the server to **`.cursor/mcp.json`** (Cursor) and
+   **`.vscode/mcp.json`** (VS Code / GitHub Copilot) in this repo. If either
+   file already exists, setup adds its one entry and leaves everything else in
+   the file alone.
+
+For any other tool, use the instructions below — they only need the URL.
+
+The server is always named **`<space-slug>-kinetic`** — e.g.
+`acme-dev-kinetic` for `https://acme-dev.kinops.io`. Naming it after the space
+matters once you work with more than one (dev, staging, a customer's space):
+every tool call your assistant makes visibly names which space it hit.
+
+#### Connect your AI assistant
+
+Replace `acme-dev` and the URL with your own space in every example below.
+
+**Claude Code**
+
+```bash
+claude mcp add --transport http acme-dev-kinetic https://acme-dev.kinops.io/app/platform-ai/mcp
+```
+
+Run it from this repo's folder: Claude Code remembers the server for this
+project only.
+
+**Cursor** — `.cursor/mcp.json` in this repo:
+
+```json
+{
+  "mcpServers": {
+    "acme-dev-kinetic": {
+      "url": "https://acme-dev.kinops.io/app/platform-ai/mcp"
+    }
+  }
+}
+```
+
+**VS Code / GitHub Copilot** — `.vscode/mcp.json` in this repo:
+
+```json
+{
+  "servers": {
+    "acme-dev-kinetic": {
+      "type": "http",
+      "url": "https://acme-dev.kinops.io/app/platform-ai/mcp"
+    }
+  }
+}
+```
+
+**Claude Desktop and claude.ai** — Settings → Connectors → **Add custom
+connector**, and paste the server URL.
+
+**OpenAI Codex CLI**
+
+```bash
+codex mcp add acme-dev-kinetic --url https://acme-dev.kinops.io/app/platform-ai/mcp
+codex mcp login acme-dev-kinetic
+```
+
+**Gemini CLI**
+
+```bash
+gemini mcp add --transport http acme-dev-kinetic https://acme-dev.kinops.io/app/platform-ai/mcp
+```
+
+**Windsurf** — add to `~/.codeium/windsurf/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "acme-dev-kinetic": {
+      "serverUrl": "https://acme-dev.kinops.io/app/platform-ai/mcp"
+    }
+  }
+}
+```
+
+**Any other MCP client** — if it supports remote HTTP servers, give it the
+URL. If it only supports local (stdio) servers, use the `mcp-remote` bridge,
+which runs locally, forwards to the URL and handles the browser sign-in:
+
+```json
+{
+  "command": "npx",
+  "args": ["-y", "mcp-remote", "https://acme-dev.kinops.io/app/platform-ai/mcp"]
+}
+```
+
+These tools change quickly. If a command or setting name above has moved, your
+tool's own MCP documentation will have the current one — the URL is the only
+Kinetic-specific part.
+
+#### Sign in
+
+The first time your assistant uses the server, it has to sign in. This opens
+your browser on your space's login page; sign in as yourself and approve the
+access request. You do it once per assistant.
+
+- **Claude Code:** start `claude` in this repo, run `/mcp`, choose
+  `<space-slug>-kinetic`, then **Authenticate**.
+- **Cursor:** open Settings → MCP; the server shows a sign-in (or "Needs
+  login") button.
+- **VS Code / Copilot:** open `.vscode/mcp.json` and choose **Start** above
+  the server, or just use it from Copilot Chat — VS Code asks you to allow the
+  sign-in.
+- **Codex:** `codex mcp login <space-slug>-kinetic` (shown above).
+- **Gemini CLI:** run `/mcp auth <space-slug>-kinetic` inside Gemini CLI.
+- **Others:** most tools start the sign-in on their own the first time they
+  connect.
+
+#### Verify it
+
+Ask your assistant something read-only that names the space, for example:
+
+> Using the Kinetic MCP server, list the kapps on my space and tell me which
+> space URL you're connected to.
+
+**You should see:** your kapps listed, and your space URL in the answer.
+
+#### Before you create, update, or delete anything
+
+Your assistant signs in **as you**, so it has exactly the access you do —
+including deleting things. Before any create, update or delete, confirm which
+space it is pointed at: the server name (`<space-slug>-kinetic`) tells you, or
+ask it, as in "Verify it" above. This is cheap insurance against changing the
+wrong environment.
+
+#### Help improve it
+
+The built-in MCP server is new, and its tool descriptions — what tells your
+assistant which tool to use and how — are still being tuned. The more it is
+used, the better they get. When your assistant picks the wrong tool,
+misunderstands one, or can't find a way to do something you'd expect it to,
+please tell the Kinetic team what you asked and what it did.
+
+### The skills library
 
 The skills library ([`kineticdata/kinetic-platform-ai-skills`][skills-repo],
-public, 63 skills covering the API, form engine, workflow XML,
-integrations, security policies, React portal patterns, and step-by-step
-recipes) is available two ways. Use whichever fits your tool, or neither:
+public) works with any AI tool. Get it one of two ways — pick at most one:
 
-**A. Git submodule (`ai-skills/`)**
-
-Already wired into this repo as a submodule at `ai-skills/`, tracking the
-`main` branch over HTTPS (no SSH keys needed). It ships alongside the repo
-but starts uninitialized — clone doesn't pull it in.
+**A. Git submodule (`ai-skills/`) — any tool**
 
 ```bash
 git submodule update --init ai-skills
 ```
 
-This is what `./setup.sh` / `.\setup.cmd` does for you if you answer "y" to
-the skills-library question in Step 2. This route works for any tool that
-reads files from the filesystem (Cursor, Copilot, plain file search), and
-it's what the root pointer files below (`CLAUDE.md`, `AGENTS.md`,
-`.cursor/rules/kinetic.mdc`, `.github/copilot-instructions.md`) point at.
+This is what setup does when you answer "y". The skills land in `ai-skills/`,
+and the pointer files at the root of this repo lead each tool to them:
+`CLAUDE.md` (Claude Code), `AGENTS.md` (Codex and other tools that read it),
+`GEMINI.md` (Gemini CLI), `.cursor/rules/kinetic.mdc` (Cursor) and
+`.github/copilot-instructions.md` (Copilot).
 
-**B. Claude Code plugin**
+To get newer skills later, pull this repo and run the command above again.
 
-The same library ships a `.claude-plugin/plugin.json` (plugin name
-`kinetic-platform`) and marketplace manifest, so if you use Claude Code you
-can install it as a plugin instead of the submodule — no clone step, no
-`ai-skills/` directory in your working tree:
+**B. Claude Code plugin — Claude Code only**
 
 ```
 /plugin marketplace add kineticdata/kinetic-platform-ai-skills
 /plugin install kinetic-platform@kinetic-data
 ```
 
-Neither route is required. If you skip both, the AI assistant just won't
-have Kinetic-specific skills loaded — everything else in this track still
-works.
-
-### Setting up the MCP server
-
-The MCP server is a small Node program you clone and build on your own
-machine. It talks to your space over the platform's REST API and speaks MCP
-over stdio to your AI assistant — nothing is hosted, and nothing runs unless
-your assistant starts it.
-
-If you answered "y" to the MCP question in Step 2, `./setup.sh` /
-`.\setup.cmd` already did all of this for you. The steps are written out here
-so you know what it did, and so you can do it by hand if you prefer.
-
-**Node 20.6.0 or newer is required for this track only.** The server's
-credentials are loaded with Node's built-in `--env-file`, which landed in
-20.6.0. The Core track's floor stays at Node 20 — the portal needs nothing
-newer, and this whole track is optional. Check with `node --version`.
-
-#### 1. Clone and build it
-
-Every command in this section starts from the root of this repo (the
-directory holding `setup.sh` and `ONBOARDING.md`) and ends back there.
-
-```bash
-git clone https://github.com/kineticdata/kinetic-platform-mgnt-mcp-server.git mcp-server
-cd mcp-server
-npm install
-npm run build
-cd ..
-```
-
-The same five commands work verbatim in PowerShell and `cmd.exe`.
-
-`mcp-server/` is gitignored. It is a per-partner local artifact — never
-commit it.
-
-#### 2. Give it credentials
-
-The server reads your space URL, username and password from
-`mcp-server/.env`. Create it from the template the server ships:
-
-macOS / Linux:
-
-```bash
-cd mcp-server
-cp .env.example .env
-chmod 600 .env
-cd ..
-```
-
-Windows (PowerShell or `cmd.exe`) — there is no `chmod`; NTFS file
-permissions are inherited from the directory instead:
-
-```powershell
-cd mcp-server
-copy .env.example .env
-cd ..
-```
-
-Then edit `mcp-server/.env` so these three lines hold your real values:
-
-```
-KINETIC_SERVER_URL=https://your-space.kinopsdev.io
-KINETIC_USERNAME=your-username
-KINETIC_PASSWORD=your-password
-```
-
-Leave every other line commented out — the defaults are what you want.
-
-The setup script writes this file for you (prompting for the username and
-password, and not echoing the password back), with mode `0600` so only your
-user account can read it. POSIX modes do not apply on Windows, so there the
-file is only as protected as the directory it sits in.
-
-> **Never commit this file, and never put credentials in an MCP client
-> config.** `mcp-server/` as a whole is in this repo's `.gitignore`, and the
-> server's own repo gitignores `.env`, so you are covered by default — but
-> the rule matters if you ever move the file. Credentials belong in
-> `mcp-server/.env` and nowhere else. Run `git status` after setup and
-> confirm you see nothing about `mcp-server` or `.env`.
-
-#### 3. Point your AI assistant at it
-
-Every client runs the same command. **Both paths must be absolute:**
-
-```
-node --env-file=<abs-path>/mcp-server/.env <abs-path>/mcp-server/dist/index.js --stdio
-```
-
-where `<abs-path>` is the absolute path to this repo on your machine (`pwd`
-prints it on macOS/Linux; `cd` with no arguments prints it in `cmd.exe`).
-
-A **relative** `--env-file` path resolves against the *MCP client's* working
-directory, not the server's, and silently loads nothing — you get a server
-that starts, lists its tools, and then fails every call. Absolute paths only.
-
-- **Claude Code:**
-
-  ```bash
-  claude mcp add kinetic-<your-space-slug> -- node --env-file=<abs-path>/mcp-server/.env <abs-path>/mcp-server/dist/index.js --stdio
-  ```
-
-- **Cursor:** `.cursor/mcp.json`
-
-  ```json
-  {
-    "mcpServers": {
-      "kinetic-<your-space-slug>": {
-        "command": "node",
-        "args": [
-          "--env-file=<abs-path>/mcp-server/.env",
-          "<abs-path>/mcp-server/dist/index.js",
-          "--stdio"
-        ]
-      }
-    }
-  }
-  ```
-
-- **VS Code / Copilot:** `.vscode/mcp.json`, same shape but the top-level key
-  is `servers` and each entry adds `"type": "stdio"`.
-
-Notice that no credential appears in any of those — only a path to the file
-that holds them.
-
-(The setup script never overwrites an existing `.cursor/mcp.json` or
-`.vscode/mcp.json` — if one was already there, you'll see a `WARN` naming the
-file it left alone, followed by the command to add there yourself. Re-running
-setup is safe either way: an existing `.env` and a Claude Code server that is
-already registered are each reported and left untouched. `mcp-server/` itself
-is the one exception — a re-run brings it up to date; see "Updating" below.)
-
-The server is registered under the name **`kinetic-<space-slug>`** — e.g.
-`kinetic-acme-dev` for `https://acme-dev.kinopsdev.io` — never a generic
-name like `kinetic`. This matters once you're working across more than one
-environment (dev, staging, a partner's space): every tool call your AI
-assistant makes visibly names which environment it hit, so you can't
-mistake a dev-space result for a prod-space one.
-
-#### 4. Verify it
-
-The server ships its own read-only smoke test. It must be run from inside
-`mcp-server/`, and `--env-file` must still be absolute:
-
-```bash
-cd mcp-server
-node --env-file=<abs-path>/mcp-server/.env scripts/smoke-test.js
-cd ..
-```
-
-It performs a real MCP handshake, lists the tools, and makes a couple of
-read-only calls against your space. It writes nothing and prints no
-credentials.
-
-**You should see:** a short list of `PASS` lines ending in `ALL PASSED`. The
-setup script runs this for you at the end and reports the result. A `FAIL`
-here is almost always a wrong space URL, username or password in
-`mcp-server/.env`.
-
-### Updating
-
-The MCP server is under active development, so re-run `./setup.sh` (or
-`.\setup.cmd`) any time to bring `mcp-server/` up to the latest commit on its
-`main` branch. If it actually moved, setup rebuilds it for you (`npm
-install`, then `npm run build`) and re-runs the smoke test; if nothing
-changed upstream, it says so and does not reinstall or rebuild — a re-run
-with nothing to do is fast.
-
-**Local edits block the update, by design.** If you've poked at the server
-code, the update is skipped rather than risking your work — you'll see a
-`WARN` naming the reason:
-
-- *Local edits* — `git status` inside `mcp-server/` found uncommitted
-  changes. Commit or `git stash` them, then re-run setup from the repo root.
-- *Diverged* — your local `mcp-server/` has commits `origin/main` doesn't
-  (e.g. you committed locally). Setup only ever fast-forwards, never resets
-  or force-checks-out; resolve by hand (rebase, or delete and re-clone if you
-  don't need the local commits) and re-run.
-- *Fetch failed* — offline, no GitHub auth, or GitHub is down. Setup warns
-  and continues with the existing checkout rather than aborting; the rest of
-  setup (and an already-working MCP server) is unaffected.
-
-`mcp-server/.env` is never touched by any of this — it's gitignored inside
-the server's own repo, so git fetch/merge leave it alone.
-
-This is a **different mechanism from the AI skills library.** That's a
-pinned git submodule (`ai-skills/`), so you get newer skills by pulling
-*this* repo and re-running setup's submodule step — not through the MCP
-server's update path above. See "Two ways to get the skills library" above;
-don't confuse the two update paths.
-
-### The tool surface
-
-The default mode, `consolidated`, covers every platform API operation with
-one tool per resource family — `forms`, `submissions`, `kapps`, `users`,
-`teams`, `workflows`, `attribute_definitions`, and so on — and you choose the
-operation with an `action` parameter, plus an `object` parameter for the
-families that span several Kinetic objects:
-
-```json
-{ "action": "list" }                                          // forms
-{ "action": "get", "identifier": "service-portal" }           // kapps
-{ "object": "form", "action": "list", "kappSlug": "services" } // attribute_definitions
-```
-
-Three things worth knowing:
-
-- **`identifier` is the canonical key.** Every tool that can address a single
-  record accepts `identifier`, so you never have to remember whether this
-  particular resource calls its key `formSlug`, `submissionId`, `slug` or
-  `name`. A submission id, a kapp slug, a team name and a form slug all go in
-  `identifier`.
-- **`object` is optional when it's unambiguous.** If only one object supports
-  the action you asked for, leave `object` out and the server infers it. When
-  several could apply, the error names exactly which ones.
-- **Scope is not identity.** A form is identified by its slug *within* a kapp,
-  so fetching one needs `identifier` **and** `kappSlug`.
-
-The default mode is deliberately well under **Cursor's ~40-tool ceiling**;
-`contexts` and `full` are not, so they need trimming there. If you run
-several MCP servers at once and are near the limit in aggregate, switch to
-the smallest surface by adding this to `mcp-server/.env`:
-
-```
-KINETIC_MCP_MODE=slim
-```
-
-The four modes, all of which can reach every operation:
-
-| Mode | Surface | Notes |
-| --- | --- | --- |
-| `consolidated` | Default | One tool per resource family, dispatched by `action`/`object`. |
-| `slim` | Smallest | A small generic surface; everything reached through generic tools that fetch the API spec and execute arbitrary requests. |
-| `contexts` | Granular | One tool per individual API operation. |
-| `full` | Legacy | Every operation under both its historical names. **Do not use in Cursor** — it exceeds the tool limit. |
-
-Exact tool counts are not listed here because they change as the server
-evolves — restating them here is exactly the kind of drift this doc should
-not own. Two places always have the current number:
-
-- **The server itself**, at startup, to stderr: `kinetic-platform-mcp:
-  mode=consolidated, N tools` (illustrative — `N` is whatever the running
-  server reports). The verify step above runs the server's own smoke test,
-  which surfaces this line for you.
-- **The server's own README**, which carries the current mode table:
-  https://github.com/kineticdata/kinetic-platform-mgnt-mcp-server#readme
-
-### Before you create, update, or delete anything
-
-The credentials in `mcp-server/.env` are your own, so your AI assistant has
-exactly the access you do — including destructive calls. There is no
-read-only mode.
-
-Combined with the multi-environment naming above: **confirm which space you
-are pointed at before any create/update/delete call.** The cheapest way is a
-read-only call whose answer names the environment — e.g. the `kapps` tool
-with `action: "list"` — or just re-read `KINETIC_SERVER_URL` in
-`mcp-server/.env`. This is cheap insurance against an AI assistant mutating
-the wrong environment.
+No `ai-skills/` folder needed. If you skip both, the MCP server still works —
+your assistant just has less Kinetic background knowledge.
 
 [skills-repo]: https://github.com/kineticdata/kinetic-platform-ai-skills
 
@@ -455,8 +367,10 @@ the wrong environment.
 
 This playground was seeded from
 [`kineticdata/momentum-portal`](https://github.com/kineticdata/momentum-portal)
-at commit `08a26ca`, which carries a public-space 401 auth fix required by
-current platform versions.
+at commit `08a26ca`, with the v7 sign-in changes from momentum-portal's
+`v7.0.0-rc5` tag ported in (external sign-ins, login banner, forced password
+change, password policy, environment banner, and sign-out through the
+identity provider).
 
 ---
 
@@ -483,9 +397,8 @@ window stays open at the end so you can read the output.
 First check the space URL you entered — a typo there (wrong slug, wrong
 environment) will make the portal unable to reach your space at all,
 which looks like a login failure. If the URL is right, it's a credentials
-problem for that specific space, not a portal problem. Delete
-`portal/.env.development.local` and run `yarn start` again if you need to
-re-enter the URL.
+problem for that specific space, not a portal problem. To re-enter the URL,
+delete `portal/.env.development.local` and re-run the setup script.
 
 **The portal isn't at `http://localhost:3000`**
 If port 3000 was already in use on your machine, Vite falls back to 3001
@@ -493,32 +406,17 @@ If port 3000 was already in use on your machine, Vite falls back to 3001
 picked in the terminal after `yarn start`. Read that line rather than
 assuming 3000.
 
-**`claude` command not found when setting up MCP**
-That's fine — the Claude Code CLI is only needed if you use Claude Code.
-`./setup.sh` / `.\setup.cmd` will detect it's missing and print the
-`claude mcp add …` command for you to run later if you install it; Cursor
-and VS Code/Copilot configs are written either way.
+**Setup says the space "does not offer the Platform AI MCP server"**
+The space isn't on Kinetic Platform v7 yet, or the URL points somewhere other
+than a space. Check the URL in `portal/.env.development.local`. Once the space
+is on v7, re-run setup.
 
-**The MCP step was skipped with a Node version warning**
-`--env-file`, which loads `mcp-server/.env`, is native Node 20.6.0 and newer.
-On older Node the process dies on an unknown flag before the server starts,
-so setup skips the MCP track rather than leaving you a config that cannot
-work. Install a newer Node and re-run — the portal is unaffected and keeps
-working on Node 20.
+**My assistant lists the server but every call fails, or it says "needs
+authentication"**
+You haven't signed it in yet — see "Sign in" in the Optional AI track. In
+Claude Code that's `/mcp`, then choose the server and **Authenticate**.
 
-**The MCP server starts but every call fails**
-Almost always a relative `--env-file` path. It resolves against your MCP
-client's working directory, not `mcp-server/`, so the file is never found and
-no credentials are loaded — the server still starts and still lists its
-tools, which is why this looks like an auth problem rather than a path
-problem. Use absolute paths in the client config. Then confirm the
-credentials themselves with the smoke test:
-`node --env-file=<abs-path>/mcp-server/.env scripts/smoke-test.js` from
-`mcp-server/`.
-
-**Cursor complains about too many tools**
-The default `consolidated` mode is deliberately well under Cursor's ~40-tool
-ceiling, so this only happens if you run other MCP servers alongside it or
-set `KINETIC_MCP_MODE=contexts`/`full`. Set `KINETIC_MCP_MODE=slim` in
-`mcp-server/.env` for the smallest surface that still reaches every
-operation.
+**`claude` command not found**
+That's fine — the Claude Code CLI is only needed if you use Claude Code. Setup
+prints the `claude mcp add …` command for you to run later if you install it.
+Cursor and VS Code / Copilot are set up either way.

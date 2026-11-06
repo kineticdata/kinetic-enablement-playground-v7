@@ -74,14 +74,14 @@ button.)
 
 ## Step 3 — Build with AI
 
-This step uses whatever AI coding assistant you set up in the Optional AI
-track of `ONBOARDING.md` — Claude Code, Cursor, Copilot, or another MCP
-client. That track is where you clone and build the MCP server locally and
-point your client at it; if you skipped it, go back and do it now (it needs
-Node 20.6.0 or newer, and your space credentials in `mcp-server/.env`).
+This step uses whatever AI assistant you connected in the Optional AI track of
+`ONBOARDING.md` — Claude Code, Cursor, VS Code / Copilot, Codex, Gemini CLI,
+or another MCP client. If you skipped it, re-run the setup script and answer
+"y" to **Set up AI tools?**, then sign your assistant in (see "Sign in" in
+that track). Your space must be on Kinetic Platform v7.
 
 The instructions below are plain intent, not a slash command, so they work the
-same way regardless of which tool you're using.
+same way in every tool.
 
 Open a chat with your assistant in this repo and paste:
 
@@ -91,50 +91,28 @@ Open a chat with your assistant in this repo and paste:
 > to a manager for approval, and the request isn't considered approved
 > until the manager approves it.
 
-Your assistant will use the Kinetic MCP server's tools to build the form and
-its approval workflow directly on your space.
+Your assistant will use your space's built-in MCP server to build the form
+and its approval workflow directly on your space.
 
 Note that you asked for *intent*, not tool names. That is deliberate — it is
-what makes the same prompt work in Claude Code, Cursor and Copilot alike, and
-it lets the assistant pick the right calls. If you want to follow along, or
-drive the tools yourself, the default `consolidated` tool surface has **one
-tool per resource family**, and you choose the operation with an `action`
-parameter (plus `object` for families that span several Kinetic objects).
-The route for this task is roughly:
-
-- `forms` with `action: "create"` — create the form, scoped by `kappSlug`
-- `forms` with `action: "get"` and `identifier: "<form-slug>"` — read it back
-- `workflows` with `object: "form"` and `action: "create"` — attach the
-  approval workflow to the form
-- `attribute_definitions` with `object: "form"` and `action: "list"` — if it
-  needs to check what form attributes the space defines
-
-Two conventions cover most of what you'll see:
-
-- **`identifier` is the canonical key** on every tool that addresses a single
-  record — a form slug, a submission id, a kapp slug, a team name all go
-  there, so there is no per-resource parameter name to remember.
-- **`object` can be omitted when it's unambiguous.** If only one object
-  supports the action, the server infers it; if several could apply, the error
-  names exactly which ones.
-
-If your assistant is running the server in `slim` mode instead, it will
-reach the same endpoints through generic tools that fetch the API spec and
-execute arbitrary requests. Either way the result on your space is
-identical.
+what makes the same prompt work in every assistant, and it lets the
+assistant pick the right tools. If you're curious which tools it used, ask
+it afterwards.
 
 This isn't a mockup or a code sample, it is **incremental seeding**: real
 platform artifacts (a form, a workflow) created from a plain-English
-description. Expect it to ask clarifying
-questions along the way (who approves, what happens on denial) — answer
-those the same way you'd brief a teammate.
+description. Expect it to ask clarifying questions along the way (who
+approves, what happens on denial) — answer those the same way you'd brief a
+teammate.
 
 **Confirm it worked:** ask your assistant to show you the new form, and to
-confirm which space it created it on — not a different one. (Driving the tools
-yourself, that's `kapps` or `forms` with `action: "list"`, and
-`KINETIC_SERVER_URL` in `mcp-server/.env` is the ground truth for which space
-you're pointed at.) Then submit a test request through it and confirm the
-approval step appears in the approver's queue.
+confirm which space it created it on — it should be the space in
+`portal/.env.development.local`, and the server it used is named after that
+space (`<space-slug>-kinetic`). Then submit a test request through the portal
+and confirm the approval step appears in the approver's queue.
+
+If the assistant picked a wrong tool or got stuck along the way, that's
+useful to know — see "Help improve it" in `ONBOARDING.md`.
 
 That's the full arc: run it, hand-edit it, and build on it with AI. From
 here, `ONBOARDING.md`'s Orientation section points at the READMEs worth

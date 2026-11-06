@@ -17,7 +17,7 @@ The Momentum Portal is a fully-functional demo that brings the capabilities of t
 ### Clone the Repository
 
 ```
-git clone https://github.com/kineticdata/kinetic-enablement-playground
+git clone https://github.com/kineticdata/kinetic-enablement-playground-v7
 ```
 
 The front end code can be found in the `portal` directory of the repo.
@@ -70,7 +70,7 @@ The following list summarizes the different libraries that have been used to cre
 ## Project Structure
 
 ```
-kinetic-enablement-playground/portal
+kinetic-enablement-playground-v7/portal
 ├── src/                    # project source code
 │   ├── assets/             # static assets (e.g. styles, fonts)
 │   ├── atoms/              # design system components
