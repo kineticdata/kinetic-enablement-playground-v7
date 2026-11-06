@@ -15,11 +15,14 @@ import { PublicRoutes } from './pages/PublicRoutes.jsx';
 import { Login } from './pages/login/Login.jsx';
 import { ConfirmationModal } from './components/confirm/ConfirmationModal.jsx';
 import { useData } from './helpers/hooks/useData.js';
+import { EnvironmentBanners } from './components/banners/EnvironmentBanners.jsx';
+import { PreviousSignIn } from './components/banners/PreviousSignIn.jsx';
 
 export const App = ({
   initialized,
   loggedIn,
   loginProps,
+  previousSignIn,
   timedOut,
   serverError,
 }) => {
@@ -136,8 +139,14 @@ export const App = ({
   return (
     <>
       <div className="flex-c-st flex-auto overflow-auto">
+        {/* The space's environment banner, above the header area */}
+        <EnvironmentBanners />
+
         {/* Header element where we will render headers via a portal */}
         <header id="app-header" className="flex-none" />
+
+        {/* After a username and password sign in, when the space shows it */}
+        {loggedIn && <PreviousSignIn previousSignIn={previousSignIn} />}
 
         <main
           id="app-main"
@@ -171,6 +180,8 @@ export const App = ({
               <PrivateRoutes />
               {timedOut && (
                 <dialog open>
+                  {/* The dialog covers the page, so it shows the banner itself */}
+                  <EnvironmentBanners />
                   <Login {...loginProps} />
                 </dialog>
               )}
@@ -185,6 +196,10 @@ export const App = ({
 
         {/* Footer element where we will render footers via a portal */}
         <footer id="app-footer" />
+
+        {/* The space's environment banner, below the footer area (only when the space places
+            it at the top and bottom) */}
+        <EnvironmentBanners placement="bottom" />
       </div>
 
       {/* Panels element where we will render panels via a portal */}
@@ -200,6 +215,7 @@ App.propTypes = {
   initialized: t.bool,
   loggedIn: t.bool,
   loginProps: t.object,
+  previousSignIn: t.object,
   timedOut: t.bool,
   serverError: t.object,
 };
